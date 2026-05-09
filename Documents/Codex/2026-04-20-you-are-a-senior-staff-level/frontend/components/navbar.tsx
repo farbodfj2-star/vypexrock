@@ -55,7 +55,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#040711]/76 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-5 lg:px-8 lg:py-4">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-1.5 px-2.5 py-2.5 sm:gap-4 sm:px-5 sm:py-3 lg:px-8 lg:py-4">
         <div className="min-w-0 flex items-center gap-4">
           <Link href="/" className="block min-w-0">
             <VypexrockLogo className="mobile-logo-scale" />
