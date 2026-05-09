@@ -1,14 +1,10 @@
 import type { AiMessage } from "@/types";
 
 export const aiPromptChips = [
+  "Explain anything simply",
   "What is Bitcoin?",
   "What does RSI mean?",
-  "Explain stop loss in simple words",
-  "What is the best crypto opportunity right now?",
   "Should I buy BTC now?",
-  "What is the difference between 15m and 4h?",
-  "Explain long, short, and neutral",
-  "What is your name?",
   "Explain black holes simply",
   "Best places to visit in Tokyo"
 ];
@@ -18,7 +14,7 @@ export const aiWelcomeMessages: AiMessage[] = [
     id: "welcome-1",
     role: "assistant",
     content:
-      "I'm Vypexrock AI. Ask me about crypto, charts, trading workflow, risk, market structure, or completely unrelated general questions. I’ll answer clearly and naturally, not like a stiff template bot.",
+      "I'm Vypexrock AI. Ask me anything: crypto, charts, trading, science, travel, tech, business, school, or random questions. If the live model is connected, I answer with real AI. If the provider is unavailable, I still use clean fallback reasoning and public context where possible.",
     mode: "long",
     status: "fallback"
   }
@@ -107,7 +103,7 @@ export function getVypexrockAiReply(input: string, mode: "short" | "long" = "lon
     );
   }
 
-  if (matches(ctx, ["tokyo", "visit tokyo", "places to visit in tokyo"])) {
+  if (matches(ctx, ["tokyo", "visit tokyo, places to visit in tokyo"])) {
     return reply(
       ctx,
       "For a strong first Tokyo trip, combine Shibuya and Shinjuku for energy, Asakusa for history, Ginza for polished shopping, and teamLab or Odaiba for modern visual culture. Tokyo is best experienced as a mix of neighborhoods with completely different personalities."

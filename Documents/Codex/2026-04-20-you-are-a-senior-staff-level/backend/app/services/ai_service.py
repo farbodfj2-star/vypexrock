@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from urllib.parse import quote
 
 import httpx
@@ -31,33 +32,36 @@ class AIExplanationService:
             return AIChatResponse(answer="Ask me anything. I will answer it clearly, like a smart human assistant who keeps the signal high and the noise low.")
 
         lowered = clean_message.lower()
-        if any(phrase in lowered for phrase in ["what is your name", "who are you", "your name"]):
+        if self._is_identity_question(lowered):
             return AIChatResponse(answer="I'm Vypexrock AI.")
 
-        provider = self._resolve_provider()
+        providers = self._resolve_providers()
 
-        if provider == "nvidia":
-            live_response = await self._nvidia_chat(clean_message, mode=mode, history=history or [])
+        if "openai" in providers:
+            live_response = await self._openai_chat(clean_message, mode=mode, history=history or [])
             if live_response:
                 return live_response
 
-        if provider == "openai":
-            live_response = await self._openai_chat(clean_message, mode=mode, history=history or [])
+        if "nvidia" in providers:
+            live_response = await self._nvidia_chat(clean_message, mode=mode, history=history or [])
             if live_response:
                 return live_response
 
         return await self._web_fallback_chat(clean_message, mode=mode)
 
-    def _resolve_provider(self) -> str:
+    def _resolve_providers(self) -> list[str]:
         explicit = settings.ai_provider.lower().strip()
-        if explicit in {"openai", "nvidia"}:
-            return explicit
+        providers: list[str] = []
+        if explicit == "openai" and settings.openai_api_key:
+            providers.append("openai")
+        elif explicit == "nvidia" and settings.nvidia_api_key:
+            providers.append("nvidia")
 
-        if settings.nvidia_api_key:
-            return "nvidia"
-        if settings.openai_api_key:
-            return "openai"
-        return "none"
+        if settings.openai_api_key and "openai" not in providers:
+            providers.append("openai")
+        if settings.nvidia_api_key and "nvidia" not in providers:
+            providers.append("nvidia")
+        return providers
 
     async def _openai_chat(
         self,
@@ -258,22 +262,9 @@ class AIExplanationService:
 
             topic = self._extract_wikipedia_topic(message)
             if topic:
-                try:
-                    wikipedia = await client.get(
-                        f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(topic)}",
-                    )
-                    if wikipedia.status_code == 200:
-                        data = wikipedia.json()
-                        extract = (data.get("extract") or "").strip()
-                        content_urls = data.get("content_urls", {}).get("desktop", {})
-                        page_url = content_urls.get("page")
-                        title = data.get("title") or topic
-                        if extract:
-                            snippets.append(extract)
-                            if page_url:
-                                sources.append(AIChatSource(title=title, url=page_url))
-                except Exception:
-                    pass
+                wikipedia_context = await self._fetch_wikipedia_context(client, topic)
+                snippets.extend(wikipedia_context["snippets"])
+                sources.extend(wikipedia_context["sources"])
 
         unique_sources: list[AIChatSource] = []
         seen_urls: set[str] = set()
@@ -285,6 +276,54 @@ class AIExplanationService:
 
         summary = " ".join(snippets[:3]).strip()
         return {"summary": summary, "sources": unique_sources[:4]}
+
+    async def _fetch_wikipedia_context(self, client: httpx.AsyncClient, topic: str) -> dict:
+        snippets: list[str] = []
+        sources: list[AIChatSource] = []
+
+        async def load_summary(title: str) -> bool:
+            try:
+                wikipedia = await client.get(
+                    f"https://en.wikipedia.org/api/rest_v1/page/summary/{quote(title)}",
+                )
+                if wikipedia.status_code != 200:
+                    return False
+                data = wikipedia.json()
+                extract = (data.get("extract") or "").strip()
+                content_urls = data.get("content_urls", {}).get("desktop", {})
+                page_url = content_urls.get("page")
+                page_title = data.get("title") or title
+                if not extract:
+                    return False
+                snippets.append(extract)
+                if page_url:
+                    sources.append(AIChatSource(title=page_title, url=page_url))
+                return True
+            except Exception:
+                return False
+
+        if await load_summary(topic):
+            return {"snippets": snippets, "sources": sources}
+
+        try:
+            search = await client.get(
+                "https://en.wikipedia.org/w/api.php",
+                params={
+                    "action": "query",
+                    "list": "search",
+                    "srsearch": topic,
+                    "format": "json",
+                    "srlimit": 1,
+                },
+            )
+            search.raise_for_status()
+            rows = search.json().get("query", {}).get("search", [])
+            if rows:
+                await load_summary(str(rows[0].get("title") or topic))
+        except Exception:
+            pass
+
+        return {"snippets": snippets, "sources": sources}
 
     def _build_system_prompt(self, mode: str) -> str:
         answer_style = (
@@ -351,6 +390,8 @@ class AIExplanationService:
 
     def _extract_wikipedia_topic(self, message: str) -> str | None:
         cleaned = message.strip().rstrip("?.!")
+        cleaned = re.sub(r"\b(in simple words|in simple terms|simply|please|for me)\b", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
         lowered = cleaned.lower()
         prefixes = ["what is ", "who is ", "explain ", "tell me about "]
         for prefix in prefixes:
@@ -359,6 +400,18 @@ class AIExplanationService:
         if len(cleaned.split()) <= 4:
             return cleaned
         return None
+
+    def _is_identity_question(self, lowered_message: str) -> bool:
+        normalized = re.sub(r"[^a-z0-9\s]", " ", lowered_message)
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        identity_questions = {
+            "what is your name",
+            "whats your name",
+            "who are you",
+            "your name",
+            "tell me your name",
+        }
+        return normalized in identity_questions
 
     def _format_web_fallback_answer(self, message: str, summary: str, mode: str, has_sources: bool) -> str:
         intro = "Here is the cleanest way to think about it."
