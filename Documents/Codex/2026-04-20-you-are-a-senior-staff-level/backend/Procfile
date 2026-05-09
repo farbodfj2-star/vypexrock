@@ -1,0 +1,6 @@
+web: alembic upgrade head && python -m app.workers.seed && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+beat: celery -A app.tasks.celery_app.celery_app beat --loglevel=info
+telegram_worker: python -m app.workers.signal_scanner_worker
+telegram_celery_worker: celery -A app.tasks.celery_app.celery_app worker -Q telegram --loglevel=info --concurrency=2
+analysis_worker: celery -A app.tasks.celery_app.celery_app worker -Q analysis --loglevel=info --concurrency=2
+alert_worker: celery -A app.tasks.celery_app.celery_app worker -Q alerts --loglevel=info --concurrency=2

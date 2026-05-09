@@ -1,0 +1,14 @@
+.next/
+node_modules/
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+dist/
+build/
+.env
+backend/.env
+postgres_data/
+redis_data/
+.tools/
+.railway-deploy/
