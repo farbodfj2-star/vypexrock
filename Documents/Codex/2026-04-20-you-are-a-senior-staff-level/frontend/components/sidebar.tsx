@@ -25,10 +25,14 @@ const links = [
 export function Sidebar() {
   const pathname = usePathname();
 
+  if (pathname === "/") {
+    return null;
+  }
+
   return (
     <aside className="hidden w-[260px] shrink-0 xl:block">
       <div className="sticky top-24 space-y-5">
-        <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(90,110,255,0.26),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.12),_transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <div className="premium-section-card overflow-hidden rounded-[2rem] p-5">
           <div className="flex items-center gap-2 text-sm text-amber-100">
             <Sparkles className="h-4 w-4 text-cyan-300" />
             Elite members terminal
@@ -49,7 +53,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        <nav className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
+        <nav className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl">
           <p className="px-3 pb-3 text-xs uppercase tracking-[0.28em] text-white/38">Platform</p>
           <div className="space-y-2">
             {links.map(({ href, label, icon: Icon }) => {
@@ -61,8 +65,8 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center justify-between rounded-[1.2rem] border px-4 py-3 transition",
                     active
-                      ? "border-amber-300/25 bg-amber-300/10 text-white"
-                      : "border-transparent bg-white/[0.02] text-white/62 hover:border-white/10 hover:bg-white/[0.05] hover:text-white"
+                      ? "border-cyan-300/24 bg-gradient-to-r from-cyan-300/12 via-violet-500/12 to-fuchsia-500/10 text-white shadow-[0_12px_34px_rgba(34,211,238,0.08)]"
+                      : "border-transparent bg-white/[0.02] text-white/62 hover:-translate-y-0.5 hover:border-cyan-300/16 hover:bg-white/[0.06] hover:text-white"
                   )}
                 >
                   <span className="flex items-center gap-3">
@@ -76,7 +80,7 @@ export function Sidebar() {
           </div>
         </nav>
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
           <div className="flex items-center gap-2 text-white">
             <TrendingUp className="h-4 w-4 text-violet-300" />
             <h3 className="text-lg font-semibold">What feels premium here</h3>

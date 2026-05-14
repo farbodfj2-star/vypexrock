@@ -136,7 +136,9 @@ export function VypexrockAI() {
   }
 
   return (
-    <section className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.14),_transparent_22%),radial-gradient(circle_at_90%_10%,_rgba(139,92,246,0.22),_transparent_18%),radial-gradient(circle_at_bottom,_rgba(255,255,255,0.06),_transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] shadow-[0_30px_90px_rgba(0,0,0,0.42)]">
+    <section className="ai-luxury-shell relative overflow-hidden rounded-[2.25rem] border border-white/10 shadow-[0_30px_90px_rgba(0,0,0,0.42)]">
+      <div className="ai-orb ai-orb-one" />
+      <div className="ai-orb ai-orb-two" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-cyan-400/8 via-violet-500/6 to-transparent" />
 
       <div className="relative flex min-h-[78vh] flex-col">
@@ -204,10 +206,10 @@ export function VypexrockAI() {
 
               <div className="max-w-[88%] space-y-2">
                 <div
-                  className={`rounded-[1.5rem] px-4 py-3 text-sm leading-7 shadow-[0_14px_40px_rgba(0,0,0,0.18)] ${
+                  className={`ai-message-bubble rounded-[1.5rem] px-4 py-3 text-sm leading-7 shadow-[0_14px_40px_rgba(0,0,0,0.18)] ${
                     message.role === "assistant"
-                      ? "border border-white/10 bg-[#09101d]/90 text-white/84"
-                      : "bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 text-slate-950"
+                      ? "ai-message-assistant border border-white/10 text-white/84"
+                      : "ai-message-user text-slate-950"
                   }`}
                 >
                   {message.content}
@@ -272,7 +274,7 @@ export function VypexrockAI() {
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-100">
                 <Bot className="h-4 w-4" />
               </div>
-              <div className="max-w-[88%] rounded-[1.5rem] border border-white/10 bg-[#09101d]/90 px-4 py-3 text-sm text-white/70 shadow-[0_14px_40px_rgba(0,0,0,0.18)]">
+              <div className="ai-message-bubble ai-message-assistant max-w-[88%] rounded-[1.5rem] border border-white/10 px-4 py-3 text-sm text-white/70 shadow-[0_14px_40px_rgba(0,0,0,0.18)]">
                 {typingText ? (
                   <div className="whitespace-pre-wrap">{typingText}</div>
                 ) : (
@@ -291,7 +293,7 @@ export function VypexrockAI() {
           ) : null}
         </div>
 
-        <div className="border-t border-white/10 px-5 py-5 lg:px-7">
+        <div className="ai-composer-card border-t border-white/10 px-5 py-5 lg:px-7">
           {pendingAttachments.length ? (
             <div className="mb-4 flex flex-wrap gap-2">
               {pendingAttachments.map((attachment) => (
@@ -312,7 +314,7 @@ export function VypexrockAI() {
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything. Press Enter to send, Shift+Enter for a new line."
-              className="min-h-[110px] w-full rounded-[1.6rem] border border-white/10 bg-black/15 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-violet-400/25 focus:shadow-[0_0_0_4px_rgba(139,92,246,0.08)]"
+              className="min-h-[110px] w-full rounded-[1.6rem] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/25 focus:shadow-[0_0_0_4px_rgba(34,211,238,0.08)]"
             />
 
             <div className="flex flex-wrap items-center justify-between gap-3">

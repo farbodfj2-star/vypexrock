@@ -54,27 +54,27 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#040711]/76 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-1.5 px-2.5 py-2.5 sm:gap-4 sm:px-5 sm:py-3 lg:px-8 lg:py-4">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#02040c]/70 shadow-[0_18px_70px_rgba(0,0,0,0.34)] backdrop-blur-2xl">
+      <div className="mx-auto flex max-w-none items-center justify-between gap-1.5 px-2.5 py-2.5 sm:gap-4 sm:px-5 sm:py-3 lg:px-8 lg:py-4">
         <div className="min-w-0 flex items-center gap-4">
           <Link href="/" className="block min-w-0">
             <VypexrockLogo className="mobile-logo-scale" />
           </Link>
 
-          <div className="hidden items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs font-medium text-cyan-100 lg:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.1)] 2xl:flex">
             <ShieldCheck className="h-3.5 w-3.5" />
             Members workspace online
           </div>
         </div>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className="hidden items-center gap-2 2xl:flex">
           {navLinks.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-white/70 transition hover:border-amber-300/20 hover:bg-amber-400/10 hover:text-white"
+              className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-sm font-medium text-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:border-cyan-300/22 hover:bg-cyan-300/10 hover:text-white hover:shadow-[0_12px_32px_rgba(34,211,238,0.1)]"
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 text-white/46 transition group-hover:text-cyan-100" />
               {label}
             </Link>
           ))}
@@ -109,7 +109,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_14px_40px_rgba(108,92,255,0.32)]"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-300 via-violet-500 to-fuchsia-400 px-4 py-2 text-sm font-extrabold text-slate-950 shadow-[0_16px_46px_rgba(108,92,255,0.34)] transition hover:-translate-y-0.5 hover:brightness-110"
             >
               <Crown className="h-4 w-4" />
               Access platform

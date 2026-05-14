@@ -103,7 +103,7 @@ export function getVypexrockAiReply(input: string, mode: "short" | "long" = "lon
     );
   }
 
-  if (matches(ctx, ["tokyo", "visit tokyo, places to visit in tokyo"])) {
+  if (matches(ctx, ["tokyo", "visit tokyo", "places to visit in tokyo"])) {
     return reply(
       ctx,
       "For a strong first Tokyo trip, combine Shibuya and Shinjuku for energy, Asakusa for history, Ginza for polished shopping, and teamLab or Odaiba for modern visual culture. Tokyo is best experienced as a mix of neighborhoods with completely different personalities."

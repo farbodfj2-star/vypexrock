@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { Navbar } from "@/components/navbar";
@@ -8,16 +7,6 @@ import { Providers } from "@/components/providers";
 import { Sidebar } from "@/components/sidebar";
 
 import "./globals.css";
-
-const bodyFont = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-body"
-});
-
-const displayFont = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display"
-});
 
 export const metadata: Metadata = {
   title: "Vypexrock",
@@ -35,7 +24,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${bodyFont.variable} ${displayFont.variable}`} data-theme="dark">
+      <body data-theme="dark">
         <Providers>
           <div id="theme-app-shell" className="relative">
             <div className="pointer-events-none fixed inset-0 overflow-hidden">

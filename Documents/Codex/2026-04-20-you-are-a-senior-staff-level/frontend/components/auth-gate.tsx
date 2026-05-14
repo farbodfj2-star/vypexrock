@@ -8,7 +8,7 @@ import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { VypexrockLogo } from "@/components/vypexrock-logo";
 
-const publicRoutes = ["/login", "/register"];
+const publicRoutes = ["/", "/login", "/register"];
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();

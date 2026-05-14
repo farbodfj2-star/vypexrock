@@ -47,6 +47,10 @@ export function MobileNavigation() {
   const { user, clearSession } = useAuthStore();
   const [open, setOpen] = useState(false);
 
+  if (pathname === "/") {
+    return null;
+  }
+
   return (
     <>
       <nav className="fixed inset-x-3 bottom-3 z-50 rounded-[1.55rem] border border-white/10 bg-slate-950/82 px-2 py-2 shadow-[0_24px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl lg:hidden">

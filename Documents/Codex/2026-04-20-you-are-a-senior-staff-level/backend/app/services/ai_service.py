@@ -122,7 +122,7 @@ class AIExplanationService:
             body["include"] = ["web_search_call.action.sources"]
 
         try:
-            async with httpx.AsyncClient(timeout=40) as client:
+            async with httpx.AsyncClient(timeout=40, trust_env=False) as client:
                 response = await client.post(
                     "https://api.openai.com/v1/responses",
                     json=body,
@@ -135,7 +135,7 @@ class AIExplanationService:
             logger.warning("OpenAI Responses API request failed: %s %s", exc.response.status_code if exc.response else "unknown", detail)
             return None
         except Exception as exc:
-            logger.warning("OpenAI Responses API request errored: %s", exc)
+            logger.warning("OpenAI Responses API request errored: %s %r", exc.__class__.__name__, exc)
             return None
 
         answer = self._extract_response_text(payload).strip()
@@ -172,12 +172,12 @@ class AIExplanationService:
             "model": settings.nvidia_model,
             "messages": messages,
             "temperature": 0.3 if mode == "short" else 0.45,
-            "max_tokens": 300 if mode == "short" else 900,
+            "max_tokens": 180 if mode == "short" else 650,
             "stream": False,
         }
 
         try:
-            async with httpx.AsyncClient(timeout=40) as client:
+            async with httpx.AsyncClient(timeout=40, trust_env=False) as client:
                 response = await client.post(
                     f"{settings.nvidia_base_url}/chat/completions",
                     json=body,
@@ -190,7 +190,7 @@ class AIExplanationService:
             logger.warning("NVIDIA chat completions request failed: %s %s", exc.response.status_code if exc.response else "unknown", detail)
             return None
         except Exception as exc:
-            logger.warning("NVIDIA chat completions request errored: %s", exc)
+            logger.warning("NVIDIA chat completions request errored: %s %r", exc.__class__.__name__, exc)
             return None
 
         answer = self._extract_nvidia_text(payload).strip()
@@ -231,7 +231,7 @@ class AIExplanationService:
         sources: list[AIChatSource] = []
         snippets: list[str] = []
 
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True, trust_env=False) as client:
             try:
                 duckduckgo = await client.get(
                     "https://api.duckduckgo.com/",
@@ -327,9 +327,9 @@ class AIExplanationService:
 
     def _build_system_prompt(self, mode: str) -> str:
         answer_style = (
-            "Keep answers concise, sharp, and premium."
+            "Keep answers concise, sharp, and premium. Answer in 2 to 4 sentences unless the user asks for depth."
             if mode == "short"
-            else "Give a fuller answer with practical detail, but stay clean and easy to scan."
+            else "Give a fuller answer with practical detail, but stay clean and easy to scan. Avoid rambling."
         )
         return (
             "You are Vypexrock AI, a premium assistant inside a crypto SaaS platform. "
@@ -442,6 +442,17 @@ class AIExplanationService:
                 "Bitcoin is the original decentralized digital asset. "
                 "No central company controls it, the supply is limited, and it became the reference asset for the broader crypto market. "
                 "The easiest way to think about it is as a digital monetary network with scarce supply and global liquidity."
+            )
+        elif "quantum computer" in lowered or "quantum computing" in lowered:
+            text = (
+                "A quantum computer is a computer that uses quantum bits, or qubits, instead of normal bits. "
+                "A normal bit is either 0 or 1, while a qubit can behave like a blend of possibilities until it is measured. "
+                "That makes quantum computers promising for certain hard problems, but they are not a faster version of a normal laptop for everyday tasks."
+            )
+        elif "tokyo" in lowered and ("visit" in lowered or "place" in lowered or "travel" in lowered):
+            text = (
+                "For Tokyo, I would build the trip around neighborhoods. "
+                "Use Shibuya and Shinjuku for energy, Asakusa for history, Ginza for polished shopping, Akihabara for gaming and tech culture, and Odaiba or teamLab for a futuristic visual stop."
             )
         elif "long" in lowered and "short" in lowered:
             text = (
