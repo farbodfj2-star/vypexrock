@@ -52,6 +52,18 @@ class CoinDetail(BaseModel):
     signals: list[SignalRead]
 
 
+class MarketPulseRead(BaseModel):
+    fear_greed: int
+    fear_greed_label: str
+    btc_dominance: float
+    session_volatility: float
+    market_bias: str
+    top_movers: list[dict]
+    gainers: list[dict]
+    losers: list[dict]
+    heatmap: list[dict]
+
+
 class MarketOpportunityRead(BaseModel):
     symbol: str
     tier: str

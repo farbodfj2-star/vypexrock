@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db, get_redis
-from app.schemas.market import Candle, CoinDetail, MarketOpportunityRead, MarketTicker, SignalRead
+from app.schemas.market import Candle, CoinDetail, MarketOpportunityRead, MarketPulseRead, MarketTicker, SignalRead
+from app.services.market_pulse_service import MarketPulseService
 from app.services.market_scan_service import MarketScanService
 from app.services.market_service import MarketService
 from app.services.signal_service import SignalEngine
@@ -16,6 +17,12 @@ router = APIRouter()
 async def dashboard() -> list[MarketTicker]:
     rows = await MarketService().fetch_dashboard()
     return [MarketTicker(**item) for item in rows]
+
+
+@router.get("/pulse", response_model=MarketPulseRead)
+async def market_pulse() -> MarketPulseRead:
+    payload = await MarketPulseService().build()
+    return MarketPulseRead(**payload)
 
 
 @router.get("/opportunities", response_model=list[MarketOpportunityRead])

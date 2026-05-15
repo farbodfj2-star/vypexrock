@@ -24,7 +24,12 @@ import { JournalSummaryCard, TradingJournalCard } from "@/components/trading-jou
 import { MarketScannerTable } from "@/components/market-scanner-table";
 import { LiveTickerStrip } from "@/components/terminal/live-ticker-strip";
 import { VolumeHeatmap } from "@/components/terminal/volume-heatmap";
-import { TradingChart } from "@/components/vx/trading-chart";
+import { CandlestickChart } from "@/components/vx/candlestick-chart";
+import { AiReasoningPanel } from "@/components/terminal/ai-reasoning-panel";
+import { MarketPulseBar } from "@/components/terminal/market-pulse-bar";
+import { MtfAgreement } from "@/components/terminal/mtf-agreement";
+import { ScannerPulse } from "@/components/terminal/scanner-pulse";
+import { SignalFeed } from "@/components/terminal/signal-feed";
 import { ScrollReveal } from "@/components/vx/scroll-reveal";
 import { useMarketStream } from "@/hooks/use-market-stream";
 import { apiFetch } from "@/lib/api";
@@ -129,7 +134,19 @@ export default function TerminalPage() {
               <span>{heroSymbol ?? "Scanning"}</span>
             </div>
             <div className="p-4">
-              <TradingChart rows={rows} symbol={heroSymbol} height={200} />
+              {heroSymbol ? (
+                <CandlestickChart
+                  symbol={heroSymbol}
+                  interval="15m"
+                  height={200}
+                  showLevels
+                  entry={opportunities[0]?.entry_high ?? ranked[0]?.score.entryHigh}
+                  stop={opportunities[0]?.stop_loss ?? ranked[0]?.score.stopLoss}
+                  tp={opportunities[0]?.take_profit_2 ?? ranked[0]?.score.takeProfit2 ?? undefined}
+                />
+              ) : (
+                <div className="vx-skeleton h-[200px] w-full rounded-xl" />
+              )}
               {heroSymbol ? (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <StatTile label="Bias" value={heroBias} />
@@ -153,6 +170,10 @@ export default function TerminalPage() {
 
       <LiveTickerStrip rows={rows} />
 
+      <MarketPulseBar />
+
+      <ScannerPulse active={scannerRows.filter((o) => o.tier !== "No Trade").length} scanning={opportunitiesLoading} />
+
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         <DashboardWidget
           title="Ranked setups"
@@ -175,6 +196,9 @@ export default function TerminalPage() {
       <ScrollReveal className="grid gap-6 2xl:grid-cols-[1.35fr_0.65fr]">
         <MarketScannerTable opportunities={scannerRows} loading={opportunitiesLoading} />
         <div className="space-y-5">
+          <SignalFeed opportunities={opportunities} />
+          <MtfAgreement top={opportunities[0]} />
+          <AiReasoningPanel setup={opportunities[0]} />
           <VolumeHeatmap rows={rows} />
           <section className="vx-glass-panel p-5">
             <p className="text-xs uppercase tracking-widest text-white/40">Trading style</p>

@@ -3,6 +3,7 @@
 import { Expand, LoaderCircle, Play, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { InstitutionalChartStack } from "@/components/chart/institutional-chart-stack";
 import { ChartAnalysisOverlay } from "@/components/chart-analysis-overlay";
 import { ChartAnalysisResult } from "@/components/chart-analysis-result";
 import { ChartAnalyzerForm } from "@/components/chart-analyzer-form";
@@ -271,9 +272,11 @@ export function ChartAnalyzerWorkspace({ rows }: { rows: MarketTicker[] }) {
             ) : null}
 
             <p className={cn("mt-3 text-sm leading-6", isDark ? "text-slate-400" : "text-slate-500")}>
-              Live chart source: TradingView widget for visual context. Vypexrock draws scenario levels and AI projections in a bounded overlay above the chart.
+              TradingView provides interaction context. Institutional PNGs below are rendered from live OHLC with SMC overlays and probabilistic projections.
             </p>
           </section>
+
+          <InstitutionalChartStack analysis={analysis} uploadedPreviewUrl={uploadedPreviewUrl} />
 
           <section className="grid gap-3 md:grid-cols-4">
             <ContextCard title="London" value="Active" isDark={isDark} />

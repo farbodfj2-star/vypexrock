@@ -1,5 +1,6 @@
 "use client";
 
+import { AssetIcon } from "@/components/asset-icon";
 import { formatCurrency, cn } from "@/lib/utils";
 import type { MarketTicker } from "@/types";
 
@@ -16,6 +17,9 @@ export function LiveTickerStrip({ rows }: { rows: MarketTicker[] }) {
           const positive = row.change_24h >= 0;
           return (
             <span key={`${row.symbol}-${index}`} className="inline-flex items-center gap-2 whitespace-nowrap">
+              <span className="grid h-5 w-5 overflow-hidden rounded-full border border-white/10">
+                <AssetIcon symbol={row.symbol} name={row.metadata_name} imageUrl={row.metadata_image} className="h-5 w-5" />
+              </span>
               <span className="text-white/90">{row.symbol.replace("USDT", "")}</span>
               <span>{formatCurrency(row.price)}</span>
               <span className={cn(positive ? "text-emerald-300" : "text-rose-300")}>

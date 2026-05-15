@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 
+import { AssetIcon } from "@/components/asset-icon";
 import { cn, formatCompactNumber } from "@/lib/utils";
 import type { MarketTicker } from "@/types";
 
@@ -35,7 +36,12 @@ export function VolumeHeatmap({ rows }: { rows: MarketTicker[] }) {
                 background: `linear-gradient(145deg, rgba(34,211,238,${0.08 + cell.intensity * 0.35}) 0%, rgba(8,10,15,0.92) 70%)`
               }}
             >
-              <p className="text-xs font-semibold text-white">{cell.symbol.replace("USDT", "")}</p>
+              <div className="flex items-center gap-2">
+                <span className="grid h-6 w-6 overflow-hidden rounded-md border border-white/10">
+                  <AssetIcon symbol={cell.symbol} imageUrl={cell.metadata_image} className="h-6 w-6" />
+                </span>
+                <p className="text-xs font-semibold text-white">{cell.symbol.replace("USDT", "")}</p>
+              </div>
               <p className="mt-1 text-[11px] text-white/45">{formatCompactNumber(cell.volume_24h)} vol</p>
               <p className={cn("mt-2 text-sm font-semibold", positive ? "text-emerald-300" : "text-rose-300")}>
                 {positive ? "+" : ""}
