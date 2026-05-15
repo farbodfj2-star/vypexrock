@@ -6,19 +6,21 @@ import { useEffect, useMemo, useState } from "react";
 import { ChartAnalysisOverlay } from "@/components/chart-analysis-overlay";
 import { ChartAnalysisResult } from "@/components/chart-analysis-result";
 import { ChartAnalyzerForm } from "@/components/chart-analyzer-form";
+import { TalkToChartPanel } from "@/components/talk-to-chart-panel";
 import { apiFetch } from "@/lib/api";
-import { cryptoSymbols, displayAssetLabel, forexSymbols, getAsset, getTradingViewConfig, mergeMarketRows, stockSymbols } from "@/lib/asset-catalog";
+import { commoditySymbols, cryptoSymbols, displayAssetLabel, forexSymbols, getAsset, getTradingViewConfig, mergeMarketRows, stockSymbols } from "@/lib/asset-catalog";
 import { buildMockChartAnalysis } from "@/lib/mock-chart-analysis";
 import type { ChartAnalysisResult as AnalysisResult } from "@/lib/mock-chart-analysis";
 import { buildProjectedCandles, type ProjectedCandle } from "@/lib/mock-projected-candles";
 import { cn } from "@/lib/utils";
 import type { MarketTicker } from "@/types";
 
-const marketTabs = ["Crypto", "Forex", "Stocks"] as const;
+const marketTabs = ["Crypto", "Forex", "Commodities", "Stocks"] as const;
 const timeframeOptions = ["1s", "1m", "5m", "15m", "30m", "1H", "4H", "1D", "1W"] as const;
 const marketSymbolMap = {
   Crypto: cryptoSymbols,
   Forex: forexSymbols,
+  Commodities: commoditySymbols,
   Stocks: stockSymbols
 } satisfies Record<(typeof marketTabs)[number], string[]>;
 
@@ -123,7 +125,7 @@ export function ChartAnalyzerWorkspace({ rows }: { rows: MarketTicker[] }) {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-white">Vypexrock Chart Analyzer</h1>
-          <p className="mt-2 text-sm text-white/60">Upload charts, select market context, and generate structured AI trade briefings.</p>
+          <p className="mt-2 text-sm text-white/60">Upload charts, talk to the chart, select market context, and generate structured AI trade briefings.</p>
         </div>
         <button
           type="button"
@@ -299,6 +301,14 @@ export function ChartAnalyzerWorkspace({ rows }: { rows: MarketTicker[] }) {
 
           <div className="space-y-3">
             <ChartAnalysisResult analysis={analysis} isDark={isDark} />
+            <TalkToChartPanel
+              symbol={symbol}
+              timeframe={timeframe}
+              analysis={analysis}
+              promptContext={prompt}
+              hasUploadedChart={Boolean(uploadedPreviewUrl)}
+              isDark={isDark}
+            />
             {uploadedPreviewUrl ? (
               <section className={cn("chart-glass-card p-3", isDark ? "text-slate-100" : "text-slate-900")}>
                 <p className={cn("text-xs font-semibold uppercase", isDark ? "text-slate-400" : "text-slate-500")}>Uploaded Reference</p>

@@ -23,6 +23,9 @@ BINANCE_FUTURES_URLS = (
     "https://fapi1.binance.com",
 )
 
+BYBIT_LINEAR_URL = "https://api.bybit.com"
+MEXC_FUTURES_URL = "https://contract.mexc.com"
+
 STABLE_OR_LEVERAGED_SUFFIXES = (
     "UPUSDT",
     "DOWNUSDT",
@@ -264,33 +267,58 @@ class MarketService:
 
     async def fetch_hot_usdt_symbols(self, *, limit: int | None = None) -> list[str]:
         target_limit = limit or settings.telegram_hot_symbol_count
+        all_tickers: list[dict] = []
         try:
             tickers = await self.fetch_binance_futures_tickers()
         except httpx.HTTPError as exc:
             logger.warning("Binance futures discovery failed: %s", exc)
             tickers = []
+        all_tickers.extend(self.normalize_discovery_ticker(item, provider="binance_futures") for item in tickers)
 
-        if not tickers:
-            try:
-                tickers = await self.fetch_binance_all_spot_tickers()
-            except httpx.HTTPError as exc:
-                logger.warning("Binance spot discovery failed: %s", exc)
-                tickers = []
+        try:
+            bybit_tickers = await self.fetch_bybit_linear_tickers()
+        except httpx.HTTPError as exc:
+            logger.warning("Bybit linear discovery failed: %s", exc)
+            bybit_tickers = []
+        all_tickers.extend(self.normalize_discovery_ticker(item, provider="bybit_linear") for item in bybit_tickers)
 
-        if not tickers:
+        try:
+            mexc_tickers = await self.fetch_mexc_futures_tickers()
+        except httpx.HTTPError as exc:
+            logger.warning("MEXC futures discovery failed: %s", exc)
+            mexc_tickers = []
+        all_tickers.extend(self.normalize_discovery_ticker(item, provider="mexc_futures") for item in mexc_tickers)
+
+        try:
+            spot_tickers = await self.fetch_binance_all_spot_tickers()
+        except httpx.HTTPError as exc:
+            logger.warning("Binance spot discovery failed: %s", exc)
+            spot_tickers = []
+        all_tickers.extend(self.normalize_discovery_ticker(item, provider="binance_spot") for item in spot_tickers)
+
+        if not all_tickers:
             return fallback_hot_symbols()[:target_limit]
 
         ranked: list[tuple[float, str]] = []
-        for item in tickers:
+        for item in all_tickers:
             symbol = str(item.get("symbol", "")).upper()
             if not is_clean_usdt_symbol(symbol):
                 continue
-            quote_volume = float(item.get("quoteVolume") or item.get("quote_volume") or 0)
+            quote_volume = float(item.get("quote_volume") or 0)
             if quote_volume < settings.telegram_min_hot_quote_volume:
                 continue
-            change = abs(float(item.get("priceChangePercent") or item.get("price_change_percent") or 0))
+            change = abs(float(item.get("change_24h") or 0))
             count = float(item.get("count") or 0)
-            score = quote_volume * (1 + min(change, 30) / 12) + count * 50_000
+            open_interest = float(item.get("open_interest") or 0)
+            funding = abs(float(item.get("funding_rate") or 0))
+            provider_bonus = 1.12 if item.get("provider") in {"binance_futures", "bybit_linear", "mexc_futures"} else 1.0
+            # Blend liquidity, volatility, attention, OI, and funding extremes without letting one meme wick dominate.
+            score = (
+                quote_volume * (1 + min(change, 45) / 10)
+                + count * 35_000
+                + open_interest * 0.65
+                + quote_volume * min(funding * 100, 0.25)
+            ) * provider_bonus
             ranked.append((score, symbol))
 
         symbols: list[str] = []
@@ -300,6 +328,41 @@ class MarketService:
             if len(symbols) >= target_limit:
                 break
         return symbols or fallback_hot_symbols()[:target_limit]
+
+    def normalize_discovery_ticker(self, item: dict, *, provider: str) -> dict:
+        if provider == "bybit_linear":
+            symbol = str(item.get("symbol", "")).replace("/", "").upper()
+            change = float(item.get("price24hPcnt") or 0) * 100
+            return {
+                "provider": provider,
+                "symbol": symbol,
+                "quote_volume": float(item.get("turnover24h") or 0),
+                "change_24h": change,
+                "count": 0,
+                "open_interest": float(item.get("openInterestValue") or item.get("openInterest") or 0),
+                "funding_rate": float(item.get("fundingRate") or 0),
+            }
+        if provider == "mexc_futures":
+            raw_symbol = str(item.get("symbol", "")).upper().replace("_", "")
+            change = float(item.get("riseFallRate") or 0) * 100
+            return {
+                "provider": provider,
+                "symbol": raw_symbol,
+                "quote_volume": float(item.get("amount24") or item.get("volume24") or 0),
+                "change_24h": change,
+                "count": 0,
+                "open_interest": float(item.get("holdVol") or 0),
+                "funding_rate": float(item.get("fundingRate") or 0),
+            }
+        return {
+            "provider": provider,
+            "symbol": str(item.get("symbol", "")).upper(),
+            "quote_volume": float(item.get("quoteVolume") or item.get("quote_volume") or 0),
+            "change_24h": float(item.get("priceChangePercent") or item.get("price_change_percent") or 0),
+            "count": float(item.get("count") or 0),
+            "open_interest": 0.0,
+            "funding_rate": 0.0,
+        }
 
     async def fetch_binance_futures_tickers(self) -> list[dict]:
         for base_url in BINANCE_FUTURES_URLS:
@@ -328,6 +391,24 @@ class MarketService:
                     return []
                 raise
         return []
+
+    async def fetch_bybit_linear_tickers(self) -> list[dict]:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get(f"{BYBIT_LINEAR_URL}/v5/market/tickers", params={"category": "linear"})
+            response.raise_for_status()
+            payload = response.json()
+        if payload.get("retCode") not in {0, "0", None}:
+            logger.warning("Bybit ticker response returned retCode=%s", payload.get("retCode"))
+            return []
+        return list((payload.get("result") or {}).get("list") or [])
+
+    async def fetch_mexc_futures_tickers(self) -> list[dict]:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get(f"{MEXC_FUTURES_URL}/api/v1/contract/ticker")
+            response.raise_for_status()
+            payload = response.json()
+        data = payload.get("data") or []
+        return list(data) if isinstance(data, list) else []
 
     async def fetch_binance_rest_tickers(self, symbols: list[str], base_url: str) -> list[dict]:
         joined = ",".join([f'"{symbol}"' for symbol in symbols])

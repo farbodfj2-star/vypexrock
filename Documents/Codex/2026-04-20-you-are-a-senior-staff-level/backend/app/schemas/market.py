@@ -50,3 +50,25 @@ class CoinDetail(BaseModel):
     ticker: MarketTicker
     candles: list[Candle]
     signals: list[SignalRead]
+
+
+class MarketOpportunityRead(BaseModel):
+    symbol: str
+    tier: str
+    direction: str
+    confidence: int
+    risk: str
+    timeframe: str
+    trigger: str
+    structure: str
+    volume: str
+    liquidity: str
+    note: str
+    price: float
+    risk_reward: float
+    entry_low: float
+    entry_high: float
+    stop_loss: float
+    take_profit_1: float
+    take_profit_2: float
+    take_profit_3: float

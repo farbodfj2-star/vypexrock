@@ -7,6 +7,7 @@ import {
   Bell,
   BookOpenText,
   Bot,
+  BrainCircuit,
   ChartCandlestick,
   ChevronRight,
   Home,
@@ -14,6 +15,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  NotebookPen,
   ScanSearch,
   Star,
   UserCircle2,
@@ -27,12 +29,14 @@ import { cn } from "@/lib/utils";
 
 const primaryItems = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/terminal", label: "Terminal", icon: BrainCircuit },
   { href: "/chart-analyzer", label: "Chart", icon: ScanSearch },
-  { href: "/ai", label: "AI", icon: Bot },
-  { href: "/community", label: "Ideas", icon: Users }
+  { href: "/ai", label: "AI", icon: Bot }
 ];
 
 const moreItems = [
+  { href: "/community", label: "Community", icon: Users, description: "AI-ranked public market intelligence" },
+  { href: "/journal", label: "Trading Journal", icon: NotebookPen, description: "Save trades, screenshots, notes, and AI reviews" },
   { href: "/watchlist", label: "Watchlist", icon: Star, description: "Saved assets and market focus" },
   { href: "/alerts", label: "Alerts", icon: Bell, description: "Telegram and price alert controls" },
   { href: "/profile", label: "Profile", icon: UserCircle2, description: "Account information and preferences" },
@@ -53,7 +57,7 @@ export function MobileNavigation() {
 
   return (
     <>
-      <nav className="fixed inset-x-3 bottom-3 z-50 rounded-[1.55rem] border border-white/10 bg-slate-950/82 px-2 py-2 shadow-[0_24px_80px_rgba(0,0,0,0.48)] backdrop-blur-2xl lg:hidden">
+      <nav className="vx-mobile-dock fixed inset-x-3 bottom-3 z-50 px-2 py-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)] lg:hidden">
         <div className="grid grid-cols-5 items-center gap-1">
           {primaryItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));

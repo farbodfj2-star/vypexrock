@@ -1,5 +1,6 @@
 "use client";
 
+import type { ClipboardEvent } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -35,8 +36,15 @@ export function ChartUpload({
     onFileChange(null, null);
   }
 
+  function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
+    const pastedFile = Array.from(event.clipboardData.files).find((file) => file.type.startsWith("image/"));
+    if (!pastedFile) return;
+    event.preventDefault();
+    handleChange(pastedFile);
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 outline-none" onPaste={handlePaste} tabIndex={0}>
       <label
         className={`flex cursor-pointer items-center justify-between rounded-2xl px-3 py-2 text-sm backdrop-blur-xl transition hover:-translate-y-0.5 ${
           isDark
@@ -50,6 +58,7 @@ export function ChartUpload({
         </span>
         <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => handleChange(event.target.files?.[0] ?? null)} />
       </label>
+      <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Tip: click here and press Ctrl+V to paste a chart screenshot.</p>
 
       {previewUrl ? (
         <div className={`chart-glass-card relative overflow-hidden p-2 ${isDark ? "text-slate-100" : "text-slate-900"}`}>

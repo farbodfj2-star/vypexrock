@@ -131,22 +131,24 @@ def format_signal_alert(signal: Any) -> str:
     confidence = int(getattr(signal, "confidence", 0))
     symbol = getattr(signal, "symbol", "UNKNOWN")
     timeframe = getattr(signal, "timeframe", "4H")
+    confirmation_timeframe = getattr(signal, "confirmation_timeframe", "1H")
     volume_ratio = float(getattr(signal, "volume_ratio", 0.0))
     main_reason = getattr(signal, "main_reason", reason)
     confirmation_reason = getattr(signal, "confirmation_reason", "Daily confirmation passed.")
+    entry_timing_reason = getattr(signal, "entry_timing_reason", "Fast entry timing is acceptable.")
     quality_notes = list(getattr(signal, "quality_notes", ()))
     quality_line = professional_reason(signal, quality_notes, reason)
     trade_direction = "LONG" if "long" in direction.lower() else "SHORT" if "short" in direction.lower() else direction.upper()
     risk_level = signal_risk_level(signal)
     early_entry = current_price if current_price is not None else getattr(signal, "entry", 0)
     signal_type = signal_type_label(confidence)
-    header = "\U0001f6a8 VYPEXROCK VALID TRADE SIGNAL"
+    header = "\U0001f6a8 VYPEXROCK AI SIGNAL"
     if confidence >= settings.telegram_elite_signal_confidence:
-        header = "\U0001f48e VYPEXROCK ELITE SETUP"
+        header = "\U0001f48e VYPEXROCK AI ELITE SIGNAL"
     elif confidence >= settings.telegram_signal_strong_confidence:
-        header = "\U0001f6a8 VYPEXROCK STRONG TRADE SIGNAL"
+        header = "\U0001f6a8 VYPEXROCK AI STRONG SIGNAL"
     elif confidence < settings.telegram_signal_min_confidence:
-        header = "\U0001f440 VYPEXROCK EARLY SIGNAL"
+        header = "\U0001f440 VYPEXROCK AI EARLY / WATCHLIST"
     volume_line = "Volume: data unreliable" if volume_ratio <= 0.01 else f"Volume: {volume_ratio:.2f}x relative"
     invalidation = getattr(signal, "invalidation", getattr(signal, "stop_loss", 0))
     main_level = format_signal_price(entry_trigger)
@@ -168,8 +170,8 @@ def format_signal_alert(signal: Any) -> str:
             header,
             "",
             f"Asset: {friendly_asset_name(symbol)}",
-            f"Exchange / Pair: {exchange_pair_label(symbol)}",
-            f"Timeframe: {timeframe.upper()}",
+            f"Exchange: {exchange_pair_label(symbol)}",
+            f"Timeframe: Entry {timeframe.upper()} | Structure {confirmation_timeframe.upper()} | Trend {getattr(settings, 'telegram_trend_timeframe', '4h').upper()}",
             f"Direction: {trade_direction}",
             f"Signal Type: {signal_type}",
             f"Confidence: {confidence}% | Risk: {risk_level}",
@@ -182,15 +184,20 @@ def format_signal_alert(signal: Any) -> str:
             f"TP1: {format_signal_price(tp1)}" if tp1 is not None else "TP1: N/A",
             f"TP2: {format_signal_price(tp2)}" if tp2 is not None else "TP2: N/A",
             f"TP3: {format_signal_price(tp3)}" if tp3 is not None else "TP3: N/A",
-            f"Main Level: {main_level}",
-            f"Invalidation: {format_signal_price(invalidation)}",
             "",
-            f"Why hot: {clean_note(hot_reason)}.",
-            f"Entry reason: {clean_note(entry_reason)}.",
-            f"Confirmation: hold trigger and keep invalidation at {format_signal_price(invalidation)}.",
-            f"{volume_line}. {late_warning}",
+            "Why this setup:",
+            f"- Market Structure: {clean_note(main_reason)}.",
+            f"- Trend: {clean_note(getattr(signal, 'structure_state', 'structure aligned'))}.",
+            f"- Volume: {volume_line.replace('Volume: ', '')}.",
+            f"- Momentum: {clean_note(entry_reason)}.",
+            f"- Liquidity: {clean_note(hot_reason)}.",
+            f"- Confirmation: {clean_note(confirmation_reason)} {clean_note(entry_timing_reason)}.",
+            "",
+            f"Invalidation: price/action is invalid below/above {format_signal_price(invalidation)} depending on direction. If price loses the trigger and violates this level, the setup is cancelled.",
+            f"Timing: {late_warning.replace('Timing: ', '')}",
             f"Final Decision: {final_decision}",
-            "Probability-based insight. Respect risk.",
+            "",
+            "Disclaimer: Probability-based AI analysis. Not financial advice.",
         ]
     )
 
@@ -248,10 +255,10 @@ def move_timing_warning(signal: Any, notes: list[str]) -> str:
 
 def final_decision_text(signal_type: str, trigger: str) -> str:
     if signal_type == "Early Signal":
-        return f"Wait for confirmation at {trigger}."
+        return f"WAIT - early setup only. Confirmation required at {trigger}."
     if signal_type == "Watchlist":
-        return "Wait. No trade until confirmation improves."
-    return f"Enter only if price confirms around {trigger}."
+        return "WAIT - watchlist only. No trade until confirmation improves."
+    return f"ENTER only if price confirms around {trigger}; otherwise wait."
 
 
 def clean_note(note: str) -> str:

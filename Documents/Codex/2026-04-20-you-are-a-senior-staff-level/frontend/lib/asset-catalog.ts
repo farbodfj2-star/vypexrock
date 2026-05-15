@@ -1,6 +1,6 @@
 import type { MarketTicker } from "@/types";
 
-export type MarketGroup = "Crypto" | "Forex" | "Stocks";
+export type MarketGroup = "Crypto" | "Forex" | "Commodities" | "Stocks";
 
 export type AssetCatalogItem = {
   symbol: string;
@@ -39,18 +39,10 @@ export const assetCatalog: AssetCatalogItem[] = [
   asset("INJUSDT", "INJ-USDT", "Injective", "Crypto", 26.4, 4.08, 570000000),
   asset("PEPEUSDT", "PEPE-USDT", "Pepe", "Crypto", 0.00000987, 6.54, 1140000000),
   asset("SHIBUSDT", "SHIB-USDT", "Shiba Inu", "Crypto", 0.00002814, 1.92, 960000000),
-  {
-    symbol: "XAUUSD",
-    label: "XAUUSD / Gold",
-    name: "Gold Spot",
-    group: "Forex",
-    fallbackPrice: 3328.4,
-    fallbackChange: 0.84,
-    fallbackVolume: 0,
-    tradingViewProvider: "OANDA",
-    tradingViewSymbol: "XAUUSD",
-    liveSource: "gold-api"
-  },
+  commodity("XAUUSD", "XAUUSD / Gold", "Gold Spot", "OANDA", "XAUUSD", 3328.4, 0.84, "gold-api"),
+  commodity("XAGUSD", "XAGUSD / Silver", "Silver Spot", "OANDA", "XAGUSD", 31.42, 0.52),
+  commodity("USOIL", "USOIL / WTI", "Crude Oil WTI", "TVC", "USOIL", 79.24, -0.36),
+  commodity("UKOIL", "UKOIL / Brent", "Brent Crude Oil", "TVC", "UKOIL", 83.18, -0.22),
   forex("EURUSD", "EURUSD", "Euro / U.S. Dollar", 1.0872, 0.12),
   forex("GBPUSD", "GBPUSD", "British Pound / U.S. Dollar", 1.2738, -0.08),
   indexAsset("NAS100", "NAS100", "Nasdaq 100", "CAPITALCOM", "US100", 18142.6, 0.46),
@@ -59,6 +51,7 @@ export const assetCatalog: AssetCatalogItem[] = [
 
 export const cryptoSymbols = assetCatalog.filter((item) => item.group === "Crypto").map((item) => item.symbol);
 export const forexSymbols = assetCatalog.filter((item) => item.group === "Forex").map((item) => item.symbol);
+export const commoditySymbols = assetCatalog.filter((item) => item.group === "Commodities").map((item) => item.symbol);
 export const stockSymbols = assetCatalog.filter((item) => item.group === "Stocks").map((item) => item.symbol);
 
 export function mergeMarketRows(rows: MarketTicker[]): MarketTicker[] {
@@ -127,6 +120,30 @@ function forex(symbol: string, label: string, name: string, fallbackPrice: numbe
     tradingViewProvider: "FX",
     tradingViewSymbol: symbol,
     liveSource: "fallback"
+  };
+}
+
+function commodity(
+  symbol: string,
+  label: string,
+  name: string,
+  provider: string,
+  tradingViewSymbol: string,
+  fallbackPrice: number,
+  fallbackChange: number,
+  liveSource: "gold-api" | "fallback" = "fallback"
+): AssetCatalogItem {
+  return {
+    symbol,
+    label,
+    name,
+    group: "Commodities",
+    fallbackPrice,
+    fallbackChange,
+    fallbackVolume: 0,
+    tradingViewProvider: provider,
+    tradingViewSymbol,
+    liveSource
   };
 }
 

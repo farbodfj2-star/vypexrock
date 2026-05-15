@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db, get_redis
-from app.schemas.market import Candle, CoinDetail, MarketTicker, SignalRead
+from app.schemas.market import Candle, CoinDetail, MarketOpportunityRead, MarketTicker, SignalRead
+from app.services.market_scan_service import MarketScanService
 from app.services.market_service import MarketService
 from app.services.signal_service import SignalEngine
 
@@ -15,6 +16,15 @@ router = APIRouter()
 async def dashboard() -> list[MarketTicker]:
     rows = await MarketService().fetch_dashboard()
     return [MarketTicker(**item) for item in rows]
+
+
+@router.get("/opportunities", response_model=list[MarketOpportunityRead])
+async def opportunities(
+    limit: int = Query(default=12, ge=1, le=24),
+    timeframe: str = Query(default="15m"),
+) -> list[MarketOpportunityRead]:
+    rows = await MarketScanService().scan_opportunities(limit=limit, timeframe=timeframe.lower())
+    return [MarketOpportunityRead(**item) for item in rows]
 
 
 @router.get("/coins/{symbol}", response_model=CoinDetail)

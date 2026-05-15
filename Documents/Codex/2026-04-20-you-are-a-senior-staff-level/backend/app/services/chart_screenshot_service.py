@@ -49,16 +49,17 @@ class ChartScreenshotService:
         price_min -= padding
         price_max += padding
 
-        image = Image.new("RGB", (width, height), "#090d19")
+        image = Image.new("RGB", (width, height), "#030405")
         draw = ImageDraw.Draw(image)
         font = load_font(12)
-        title_font = load_font(22)
-        small_font = load_font(14)
+        title_font = load_font(20)
+        small_font = load_font(13)
 
-        draw.rounded_rectangle((30, 24, width - 30, height - 24), radius=34, fill="#0b1020", outline="#7c3aed", width=2)
-        draw.rounded_rectangle((48, 42, width - 48, height - 42), radius=26, outline="#1e293b", width=1)
+        draw.rounded_rectangle((24, 20, width - 24, height - 20), radius=28, fill="#0a0c10", outline="#1f2937", width=1)
+        draw.rounded_rectangle((40, 36, width - 40, height - 36), radius=20, outline="#111827", width=1)
         live_price = float(getattr(signal, "current_price", visible_candles[-1]["close"]))
-        draw.text((left, 42), f"Vypexrock AI Projection | {signal.symbol} | {signal.timeframe.upper()} | Live {live_price:,.6g}", fill="#f8fafc", font=title_font)
+        draw.text((left, 40), f"Vypexrock · {signal.symbol} · {signal.timeframe.upper()}", fill="#f8fafc", font=title_font)
+        draw.text((left, 64), f"Mark {live_price:,.6g}  ·  R:R {signal.risk_reward:.2f}", fill="#94a3b8", font=small_font)
         self._draw_badge(draw, signal.direction.upper(), right - 280, 38, "#2563eb", "#dbeafe", small_font)
         confidence_color = "#16a34a" if signal.confidence >= 70 else "#f59e0b"
         self._draw_badge(draw, f"{signal.confidence}% CONF", right - 150, 38, confidence_color, "#020617", small_font)
@@ -111,22 +112,33 @@ class ChartScreenshotService:
         entry = signal.entry
         entry_low = float(getattr(signal, "entry_low", entry))
         entry_high = float(getattr(signal, "entry_high", entry))
-        tp = signal.take_profits[-1]
+        take_profits = list(signal.take_profits)
         stop = signal.stop_loss
         entry_y = self._price_to_y(entry, price_min, price_max, top, bottom)
         entry_low_y = self._price_to_y(entry_low, price_min, price_max, top, bottom)
         entry_high_y = self._price_to_y(entry_high, price_min, price_max, top, bottom)
         stop_y = self._price_to_y(stop, price_min, price_max, top, bottom)
-        tp_y = self._price_to_y(tp, price_min, price_max, top, bottom)
         zone_left = real_right + 18
         zone_right = right - 20
-        reward_color = (16, 185, 129, 58)
-        risk_color = (244, 63, 94, 58)
+        reward_color = (16, 185, 129, 48)
+        risk_color = (244, 63, 94, 48)
         overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
         overlay_draw = ImageDraw.Draw(overlay)
-        overlay_draw.rounded_rectangle((left, min(entry_low_y, entry_high_y), right, max(entry_low_y, entry_high_y)), radius=6, fill=(96, 165, 250, 38))
-        overlay_draw.rounded_rectangle((zone_left, min(entry_y, tp_y), zone_right, max(entry_y, tp_y)), radius=8, fill=reward_color)
+        overlay_draw.rounded_rectangle((left, min(entry_low_y, entry_high_y), right, max(entry_low_y, entry_high_y)), radius=6, fill=(94, 234, 212, 32))
+        for index, target in enumerate(take_profits, start=1):
+            tp_y = self._price_to_y(target, price_min, price_max, top, bottom)
+            overlay_draw.rounded_rectangle((zone_left, min(entry_y, tp_y), zone_right, max(entry_y, tp_y)), radius=6, fill=reward_color)
         overlay_draw.rounded_rectangle((zone_left, min(entry_y, stop_y), zone_right, max(entry_y, stop_y)), radius=8, fill=risk_color)
+        self._draw_support_resistance_zones(
+            overlay_draw,
+            visible_candles,
+            price_min,
+            price_max,
+            top,
+            bottom,
+            left,
+            right,
+        )
         image = Image.alpha_composite(image.convert("RGBA"), overlay).convert("RGB")
         draw = ImageDraw.Draw(image)
 
@@ -143,8 +155,11 @@ class ChartScreenshotService:
         )
         self._draw_level(draw, "Entry Zone", entry, "#60a5fa", price_min, price_max, top, bottom, left, right, font)
         self._draw_level(draw, "Stop Loss", stop, "#fb7185", price_min, price_max, top, bottom, left, right, font)
-        for index, target in enumerate(signal.take_profits, start=1):
-            self._draw_level(draw, f"TP{index}", target, "#34d399", price_min, price_max, top, bottom, left, right, font)
+        tp_colors = ["#6ee7b7", "#34d399", "#10b981"]
+        for index, target in enumerate(take_profits, start=1):
+            color = tp_colors[min(index - 1, len(tp_colors) - 1)]
+            self._draw_level(draw, f"TP{index}", target, color, price_min, price_max, top, bottom, left, right, font)
+        self._draw_structure_labels(draw, visible_candles, price_min, price_max, top, bottom, left, right, font)
 
         draw.text((left, height - 48), "Actionable probability-based setup. Use a stop loss and defined position sizing.", fill="#cbd5e1", font=small_font)
         draw.text((right - 210, height - 48), f"R:R {signal.risk_reward:.2f}R", fill="#c4b5fd", font=small_font)
@@ -152,6 +167,52 @@ class ChartScreenshotService:
         output_path = self.output_dir / f"{signal.symbol}_{signal.timeframe}_{timestamp}_telegram_signal.png"
         image.save(output_path, "PNG")
         return str(output_path)
+
+    def _draw_support_resistance_zones(
+        self,
+        draw: ImageDraw.ImageDraw,
+        candles: list[dict],
+        price_min: float,
+        price_max: float,
+        top: int,
+        bottom: int,
+        left: int,
+        right: int,
+    ) -> None:
+        recent = candles[-70:] if len(candles) >= 70 else candles
+        if len(recent) < 20:
+            return
+        support = min(float(item["low"]) for item in recent)
+        resistance = max(float(item["high"]) for item in recent)
+        zone = max((price_max - price_min) * 0.006, resistance * 0.0008)
+        support_y1 = self._price_to_y(support + zone, price_min, price_max, top, bottom)
+        support_y2 = self._price_to_y(support - zone, price_min, price_max, top, bottom)
+        resistance_y1 = self._price_to_y(resistance + zone, price_min, price_max, top, bottom)
+        resistance_y2 = self._price_to_y(resistance - zone, price_min, price_max, top, bottom)
+        draw.rounded_rectangle((left, min(support_y1, support_y2), right, max(support_y1, support_y2)), radius=5, fill=(34, 197, 94, 20))
+        draw.rounded_rectangle((left, min(resistance_y1, resistance_y2), right, max(resistance_y1, resistance_y2)), radius=5, fill=(244, 63, 94, 20))
+
+    def _draw_structure_labels(
+        self,
+        draw: ImageDraw.ImageDraw,
+        candles: list[dict],
+        price_min: float,
+        price_max: float,
+        top: int,
+        bottom: int,
+        left: int,
+        right: int,
+        font: ImageFont.ImageFont,
+    ) -> None:
+        recent = candles[-70:] if len(candles) >= 70 else candles
+        if len(recent) < 20:
+            return
+        support = min(float(item["low"]) for item in recent)
+        resistance = max(float(item["high"]) for item in recent)
+        support_y = self._price_to_y(support, price_min, price_max, top, bottom)
+        resistance_y = self._price_to_y(resistance, price_min, price_max, top, bottom)
+        draw.text((left + 8, max(top + 4, resistance_y - 18)), "Resistance zone", fill="#fb7185", font=font)
+        draw.text((left + 8, min(bottom - 18, support_y + 6)), "Support zone", fill="#34d399", font=font)
 
     def _draw_badge(
         self,

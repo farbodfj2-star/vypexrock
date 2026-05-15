@@ -9,6 +9,7 @@ import httpx
 
 from app.core.config import settings
 from app.db.session import get_redis
+from app.services.ai_service import AIExplanationService
 from app.services.market_service import MarketService
 from app.services.signal_alert_service import market_update_symbols
 from app.services.signal_alert_service import top_market_rows
@@ -68,8 +69,10 @@ HELP_TEXT = "\n".join(
         "Send /price BTC for live price",
         "Send /market for top 15 live assets",
         "Send /signal for latest best setup if available",
+        "Send /ask your question for Vypexrock AI",
+        "Send a chart screenshot for AI chart review",
         "",
-        "Examples: BTC, ETHUSDT, PEPE, GOLD, OIL",
+        "Examples: BTC, ETHUSDT, PEPE, GOLD, OIL, /ask is BTC overextended?",
     ]
 )
 
@@ -77,6 +80,7 @@ HELP_TEXT = "\n".join(
 class TelegramCommandService:
     def __init__(self):
         self.market_service = MarketService()
+        self.ai_service = AIExplanationService()
 
     async def poll_and_handle_updates(self) -> dict[str, Any]:
         if not settings.telegram_bot_token:
@@ -116,7 +120,8 @@ class TelegramCommandService:
         text = str(message.get("text") or "").strip()
         chat = message.get("chat") or {}
         chat_id = str(chat.get("id") or "")
-        if not text or not chat_id:
+        has_photo = bool(message.get("photo"))
+        if (not text and not has_photo) or not chat_id:
             return False
         if settings.telegram_chat_id and chat_id != str(settings.telegram_chat_id):
             return False
@@ -125,6 +130,11 @@ class TelegramCommandService:
         message_date = int(message.get("date") or 0)
         if message_date and datetime.now(UTC).timestamp() - message_date > 10 * 60:
             return False
+
+        if message.get("photo"):
+            reply = await self.photo_chart_reply(message)
+            await send_telegram_message(reply, chat_id=chat_id, bot_token=settings.telegram_bot_token)
+            return True
 
         reply = await self.build_reply(text)
         await send_telegram_message(reply, chat_id=chat_id, bot_token=settings.telegram_bot_token)
@@ -138,12 +148,72 @@ class TelegramCommandService:
             return await self.market_reply()
         if command == "signal":
             return await self.latest_signal_reply()
+        if command == "ask":
+            if not argument:
+                return "Send /ask followed by your question. Example: /ask Is BTC overextended?"
+            return await self.ai_reply(argument)
         if command == "price":
             if not argument:
                 return "Send /price BTC, /price ETHUSDT, /price GOLD, or /price OIL."
             return await self.price_reply(argument)
 
-        return await self.price_reply(text)
+        if looks_like_symbol_query(text):
+            return await self.price_reply(text)
+        return await self.ai_reply(text)
+
+    async def ai_reply(self, text: str) -> str:
+        try:
+            response = await self.ai_service.chat(
+                message=(
+                    "You are Vypexrock AI inside Telegram. Answer like a calm professional trader and AI market assistant. "
+                    "Be concise, risk-aware, and never promise profits. If the user asks trading advice, explain scenarios, invalidation, and risk.\n\n"
+                    f"User: {text}"
+                ),
+                mode="short",
+            )
+            return trim_telegram_reply(response.answer)
+        except Exception:
+            return (
+                "Vypexrock AI is temporarily unavailable.\n\n"
+                "I can still answer price commands like BTC, /price ETH, /market, and /signal."
+            )
+
+    async def photo_chart_reply(self, message: dict[str, Any]) -> str:
+        photos = message.get("photo") or []
+        if not photos:
+            return "I could not read the chart image. Send a clear screenshot or use /ask with chart context."
+        largest = max(photos, key=lambda item: int(item.get("file_size") or 0))
+        file_id = str(largest.get("file_id") or "")
+        caption = str(message.get("caption") or "").strip()
+        if not file_id:
+            return "I could not read the chart image. Send a clear screenshot or use /ask with chart context."
+        try:
+            image_bytes, mime_type = await self.download_telegram_file(file_id)
+            response = await self.ai_service.chat_with_image(
+                (
+                    "Analyze this trading chart screenshot like a professional trader. "
+                    "Return market bias, key levels, liquidity, entry plan, stop loss, take profits, invalidation, and no-trade warning if weak. "
+                    f"User caption/context: {caption or 'none'}"
+                ),
+                image_bytes,
+                mime_type=mime_type,
+            )
+            return trim_telegram_reply(response.answer)
+        except Exception:
+            return "I received the chart image, but image analysis failed right now. Try again or send /ask with symbol, timeframe, and visible levels."
+
+    async def download_telegram_file(self, file_id: str) -> tuple[bytes, str]:
+        async with httpx.AsyncClient(timeout=30) as client:
+            file_response = await client.get(f"{TELEGRAM_API_BASE}/bot{settings.telegram_bot_token}/getFile", params={"file_id": file_id})
+            file_response.raise_for_status()
+            file_payload = file_response.json()
+            file_path = (file_payload.get("result") or {}).get("file_path")
+            if not file_path:
+                raise ValueError("telegram file_path missing")
+            download_response = await client.get(f"{TELEGRAM_API_BASE}/file/bot{settings.telegram_bot_token}/{file_path}")
+            download_response.raise_for_status()
+            mime_type = "image/png" if str(file_path).lower().endswith(".png") else "image/jpeg"
+            return download_response.content, mime_type
 
     async def price_reply(self, raw_symbol: str) -> str:
         symbol = normalize_symbol(raw_symbol)
@@ -249,6 +319,19 @@ def normalize_symbol(raw_symbol: str) -> str | None:
     return None
 
 
+def looks_like_symbol_query(text: str) -> bool:
+    cleaned = clean_symbol(text)
+    if not cleaned:
+        return False
+    if " " in text.strip():
+        return False
+    if cleaned in SYMBOL_ALIASES or cleaned in YAHOO_SYMBOL_ALIASES:
+        return True
+    if cleaned.endswith("USDT") and 5 <= len(cleaned) <= 16:
+        return True
+    return 2 <= len(cleaned) <= 8 and cleaned.isalnum()
+
+
 def clean_symbol(raw_symbol: str) -> str:
     return re.sub(r"[^A-Za-z0-9]", "", raw_symbol).upper()
 
@@ -270,6 +353,13 @@ def yahoo_lookup_symbol(raw_symbol: str, normalized_symbol: str) -> tuple[str | 
 
 def unknown_asset_message() -> str:
     return "Asset not found. Try BTC, ETH, SOL, PEPE, INJ, GOLD, or OIL."
+
+
+def trim_telegram_reply(answer: str, limit: int = 1400) -> str:
+    clean = answer.strip()
+    if len(clean) <= limit:
+        return clean
+    return clean[: limit - 3].rstrip() + "..."
 
 
 def market_mood(change_24h: float) -> str:

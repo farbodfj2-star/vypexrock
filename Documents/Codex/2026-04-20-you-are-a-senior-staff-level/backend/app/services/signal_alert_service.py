@@ -53,6 +53,8 @@ class TelegramSignal:
     entry_trigger: float
     structure_state: str
     confirmation_state: str
+    entry_timing_state: str
+    entry_timing_reason: str
     position_size: float
     risk_amount: float
     risk_percent: float
@@ -222,7 +224,7 @@ class SignalAlertAutomationService:
         await self._record_log(
             kind="best_setup",
             status=str(delivery.get("status")),
-            detail=f"{signal.symbol} 4H/Daily {signal.direction} {signal.confidence}% {signal.risk_reward:.2f}R",
+            detail=f"{signal.symbol} {signal.timeframe}/{signal.confirmation_timeframe} {signal.direction} {signal.confidence}% {signal.risk_reward:.2f}R",
             message_id=delivery.get("message_id"),
             symbol=signal.symbol,
         )
@@ -259,10 +261,12 @@ class SignalAlertAutomationService:
         main_tf = settings.telegram_signal_timeframe
         confirmation_tf = settings.telegram_confirmation_timeframe
         trend_tf = settings.telegram_trend_timeframe
+        fast_tf = settings.telegram_fast_timeframe
         main_candles = await self.market_service.fetch_candles(symbol, main_tf, limit=180)
         confirmation_candles = await self.market_service.fetch_candles(symbol, confirmation_tf, limit=180)
         trend_candles = await self.market_service.fetch_candles(symbol, trend_tf, limit=180)
-        signal = await self._build_signal(symbol, main_tf, main_candles, confirmation_tf, confirmation_candles, trend_tf, trend_candles)
+        fast_candles = await self.market_service.fetch_candles(symbol, fast_tf, limit=140)
+        signal = await self._build_signal(symbol, main_tf, main_candles, confirmation_tf, confirmation_candles, trend_tf, trend_candles, fast_tf, fast_candles)
         screenshot_path = self.screenshot_service.render_signal_chart(main_candles, signal)
         delivery = await send_signal_alert(signal, screenshot_path, chat_id=chat_id, bot_token=bot_token)
         return {"status": delivery.get("status", "unknown"), "delivery": delivery, "signal": asdict(signal)}
@@ -290,8 +294,10 @@ class SignalAlertAutomationService:
         confirmation_candles: list[dict],
         trend_timeframe: str,
         trend_candles: list[dict],
+        fast_timeframe: str,
+        fast_candles: list[dict],
     ) -> TelegramSignal:
-        if len(main_candles) < 80 or len(confirmation_candles) < 80 or len(trend_candles) < 80:
+        if len(main_candles) < 80 or len(confirmation_candles) < 80 or len(trend_candles) < 80 or len(fast_candles) < 60:
             raise ValueError("not enough candle history for MTF signal")
 
         computed = await self.signal_engine.compute(main_candles, use_ai=False)
@@ -345,6 +351,7 @@ class SignalAlertAutomationService:
         volume_ratio = recent_volume_ratio(main_candles)
         trend_alignment = trend_filter_check(trend_candles, tactical_bias, trend_timeframe.upper())
         quality = signal_quality_score(
+            symbol=symbol,
             candles=main_candles,
             bias=tactical_bias,
             base_confidence=int(computed.confidence),
@@ -356,7 +363,8 @@ class SignalAlertAutomationService:
             take_profits=take_profits,
         )
         confirmation = confirmation_check(confirmation_candles, tactical_bias, confirmation_timeframe.upper())
-        confidence = min(96, max(0, int(quality["score"]) + confirmation.score + trend_alignment.score))
+        fast_timing = entry_timing_check(fast_candles, tactical_bias, fast_timeframe.upper())
+        confidence = min(96, max(0, int(quality["score"]) + confirmation.score + trend_alignment.score + fast_timing.score))
         direction = "Wait"
         if tactical_bias == "long":
             if confidence >= settings.telegram_elite_signal_confidence:
@@ -378,7 +386,11 @@ class SignalAlertAutomationService:
             f"{volume_ratio:.2f}x volume, RSI {computed.rsi:.1f}, and {macd_state} MACD."
         )
         confirmation_reason = confirmation.reason
-        reason = f"{main_reason} {confirmation_timeframe.upper()} confirmation: {confirmation_reason} {trend_timeframe.upper()} trend filter: {trend_alignment.reason}"
+        reason = (
+            f"{main_reason} {confirmation_timeframe.upper()} structure confirmation: {confirmation_reason} "
+            f"{trend_timeframe.upper()} trend filter: {trend_alignment.reason} "
+            f"{fast_timeframe.upper()} entry timing: {fast_timing.reason}"
+        )
 
         return TelegramSignal(
             symbol=symbol,
@@ -401,13 +413,15 @@ class SignalAlertAutomationService:
             entry_trigger=round(entry_trigger, 8),
             structure_state=str(quality["structure_label"]),
             confirmation_state=confirmation.state,
+            entry_timing_state=fast_timing.state,
+            entry_timing_reason=fast_timing.reason,
             position_size=round(position_size, 6),
             risk_amount=round(risk_amount, 2),
             risk_percent=settings.telegram_signal_risk_percent,
             volume_ratio=round(volume_ratio, 2),
             confirmation_volume_ratio=round(confirmation.volume_ratio, 2),
             quality_score=int(quality["score"]),
-            quality_notes=tuple(str(note) for note in [*quality["notes"], *confirmation.notes, *trend_alignment.notes]),
+            quality_notes=tuple(str(note) for note in [*quality["notes"], *confirmation.notes, *trend_alignment.notes, *fast_timing.notes]),
             expires_at=(datetime.now(UTC) + timedelta(hours=settings.telegram_signal_expiry_hours)).isoformat(),
         )
 
@@ -424,6 +438,8 @@ class SignalAlertAutomationService:
             return False
         if signal.confirmation_state in {"failed", "unclear", "rejection"}:
             return False
+        if signal.entry_timing_state in {"failed", "late", "reversal"}:
+            return False
         if not signal.stop_loss or not signal.take_profits:
             return False
         if main_candles and not setup_is_clean(main_candles, signal):
@@ -439,6 +455,8 @@ class SignalAlertAutomationService:
             return False
         if signal.confirmation_state in {"failed", "rejection"}:
             return False
+        if signal.entry_timing_state in {"failed", "late", "reversal"}:
+            return False
         if signal.volume_ratio <= 0.01 and signal.symbol.endswith("USDT"):
             return False
         if main_candles and (is_messy_sideways(main_candles) or is_huge_impulse_without_pullback(main_candles)):
@@ -451,6 +469,8 @@ class SignalAlertAutomationService:
         if not (settings.telegram_watchlist_min_confidence <= signal.confidence < settings.telegram_early_signal_min_confidence):
             return False
         if signal.risk_reward < 1.0:
+            return False
+        if signal.entry_timing_state == "reversal":
             return False
         if signal.volume_ratio <= 0.01 and signal.symbol.endswith("USDT"):
             return False
@@ -466,11 +486,13 @@ class SignalAlertAutomationService:
         watchlist: list[tuple[TelegramSignal, list[dict]]] = []
         confirmation_tf = settings.telegram_confirmation_timeframe
         trend_tf = settings.telegram_trend_timeframe
+        fast_tf = settings.telegram_fast_timeframe
         high_volatility = False
         for symbol in await self._signal_symbols():
             try:
                 confirmation_candles = await self.market_service.fetch_candles(symbol, confirmation_tf, limit=180)
                 trend_candles = await self.market_service.fetch_candles(symbol, trend_tf, limit=180)
+                fast_candles = await self.market_service.fetch_candles(symbol, fast_tf, limit=140)
             except Exception as exc:  # pragma: no cover - surfaced in worker logs
                 for main_tf in signal_timeframes():
                     checked += 1
@@ -481,7 +503,7 @@ class SignalAlertAutomationService:
                 try:
                     main_candles = await self.market_service.fetch_candles(symbol, main_tf, limit=180)
                     high_volatility = high_volatility or is_high_volatility(main_candles, symbol)
-                    signal = await self._build_signal(symbol, main_tf, main_candles, confirmation_tf, confirmation_candles, trend_tf, trend_candles)
+                    signal = await self._build_signal(symbol, main_tf, main_candles, confirmation_tf, confirmation_candles, trend_tf, trend_candles, fast_tf, fast_candles)
                     if signal.confidence < settings.telegram_watchlist_min_confidence:
                         skipped.append({"symbol": f"{symbol}:{main_tf}", "reason": f"confidence below 50% ({signal.confidence}%)"})
                         continue
@@ -532,7 +554,23 @@ class SignalAlertAutomationService:
         if not force and await redis.get(key):
             return {"status": "skipped", "reason": "market status cooldown"}
         delivery = await send_telegram_message(
-            "Vypexrock Market Status\n\nNo clean 50%+ setup passed the filters right now. Still scanning GOLD, SILVER, OIL, BTC, ETH, SOL, XRP, DOGE, and hot high-volume altcoin movers.\n\nMode: patient, selective, quality over spam.",
+            "\n".join(
+                [
+                    "VYPEXROCK MARKET STATUS",
+                    "",
+                    "No high-quality trade setup right now.",
+                    "",
+                    "Watching:",
+                    "- BTC, ETH, SOL and majors",
+                    "- Hot altcoins and meme futures",
+                    "- New high-volume movers",
+                    "- Breakout/retest candidates",
+                    "",
+                    "Best current condition: waiting for clean 15m entry + 1H confirmation + 4H trend alignment.",
+                    "",
+                    "Do not force trades.",
+                ]
+            ),
             chat_id=credentials.chat_id,
             bot_token=credentials.bot_token,
         )
@@ -1138,8 +1176,44 @@ def tactical_bias_from_candles(candles: list[dict]) -> str:
     return "long" if score >= 0 else "short"
 
 
+def meme_momentum_score(candles: list[dict], *, symbol: str, bias: str) -> dict[str, Any]:
+    """Score explosive alt/meme momentum with volume expansion — penalize chase entries."""
+    notes: list[str] = []
+    score = 0
+    if bias not in {"long", "short"} or len(candles) < 40:
+        return {"score": 0, "notes": notes}
+    if not symbol.endswith("USDT") or symbol in {"BTCUSDT", "ETHUSDT", "BNBUSDT"}:
+        return {"score": 0, "notes": notes}
+
+    closes = [float(item["close"]) for item in candles]
+    volume_ratio = recent_volume_ratio(candles, 20)
+    change_6 = ((closes[-1] - closes[-7]) / closes[-7] * 100) if len(closes) >= 7 and closes[-7] else 0
+    change_24 = ((closes[-1] - closes[-25]) / closes[-25] * 100) if len(closes) >= 25 and closes[-25] else 0
+    atr = average_true_range_local(candles) or max(closes[-1] * 0.01, 1e-8)
+    last_range = float(candles[-1]["high"]) - float(candles[-1]["low"])
+    range_expansion = last_range >= atr * 1.35
+
+    if volume_ratio >= 2.2 and abs(change_6) >= 4:
+        score += 10 if (bias == "long" and change_6 > 0) or (bias == "short" and change_6 < 0) else -14
+        notes.append("meme-tier volume surge")
+    elif volume_ratio >= 1.6 and abs(change_24) >= 8:
+        score += 6 if (bias == "long" and change_24 > 0) or (bias == "short" and change_24 < 0) else -10
+        notes.append("high-beta momentum extension")
+
+    if range_expansion and abs(change_6) > 6:
+        score -= 12
+        notes.append("late chase after range expansion")
+
+    if is_huge_impulse_without_pullback(candles):
+        score -= 8
+        notes.append("meme impulse without pullback")
+
+    return {"score": score, "notes": notes}
+
+
 def signal_quality_score(
     *,
+    symbol: str = "",
     candles: list[dict],
     bias: str,
     base_confidence: int,
@@ -1205,6 +1279,10 @@ def signal_quality_score(
     sudden = sudden_opportunity_score(candles, bias, atr)
     score += int(sudden["score"])
     notes.extend(str(note) for note in sudden["notes"])
+
+    meme = meme_momentum_score(candles, symbol=symbol, bias=bias)
+    score += int(meme["score"])
+    notes.extend(str(note) for note in meme["notes"])
 
     if risk_reward >= 2.0:
         score += 5
@@ -1393,6 +1471,64 @@ def trend_filter_check(candles: list[dict], bias: str, timeframe_label: str = "1
     return ConfirmationResult(False, -16, f"{timeframe_label} trend conflicts with short bias.", "failed", volume_ratio, (f"{timeframe_label} trend conflict",))
 
 
+def entry_timing_check(candles: list[dict], bias: str, timeframe_label: str = "5M") -> ConfirmationResult:
+    if bias not in {"long", "short"}:
+        return ConfirmationResult(False, -12, f"{timeframe_label} has no directional entry context.", "failed", 0.0, (f"{timeframe_label} no entry bias",))
+    if len(candles) < 45:
+        return ConfirmationResult(False, -10, f"{timeframe_label} has insufficient fast-entry history.", "failed", 0.0, (f"{timeframe_label} insufficient history",))
+
+    closes = [float(item["close"]) for item in candles]
+    ema8 = ema_local(closes, 8)[-1]
+    ema20 = ema_local(closes, 20)[-1]
+    rsi = rsi_local(closes)
+    atr = average_true_range_local(candles) or max(closes[-1] * 0.006, 1e-8)
+    volume_ratio = recent_volume_ratio(candles, 24)
+    last = candles[-1]
+    previous = candles[-22:-1]
+    close = float(last["close"])
+    open_price = float(last["open"])
+    high = float(last["high"])
+    low = float(last["low"])
+    previous_high = max(float(item["high"]) for item in previous)
+    previous_low = min(float(item["low"]) for item in previous)
+    body = abs(close - open_price)
+    candle_range = max(high - low, 1e-8)
+    upper_wick_ratio = (high - max(open_price, close)) / candle_range
+    lower_wick_ratio = (min(open_price, close) - low) / candle_range
+
+    if is_huge_impulse_without_pullback(candles):
+        return ConfirmationResult(False, -10, f"{timeframe_label} entry is late after a fast impulse; wait for pullback.", "late", volume_ratio, (f"{timeframe_label} late entry risk",))
+
+    if bias == "long":
+        reversal = close < open_price and upper_wick_ratio > 0.42 and volume_ratio >= 1.05
+        breakout = close > previous_high and volume_ratio >= 0.95
+        pullback_reclaim = low <= ema20 <= close and close > open_price and rsi >= 48
+        constructive = close >= ema8 >= ema20 and rsi >= 50 and body <= atr * 1.4
+        if reversal:
+            return ConfirmationResult(False, -14, f"{timeframe_label} shows rejection against the long entry.", "reversal", volume_ratio, (f"{timeframe_label} bearish rejection",))
+        if breakout:
+            return ConfirmationResult(True, 5, f"{timeframe_label} is breaking local resistance with acceptable volume.", "breakout", volume_ratio, (f"{timeframe_label} fast breakout",))
+        if pullback_reclaim:
+            return ConfirmationResult(True, 4, f"{timeframe_label} reclaimed EMA20 after a controlled pullback.", "reclaim", volume_ratio, (f"{timeframe_label} pullback reclaim",))
+        if constructive:
+            return ConfirmationResult(True, 2, f"{timeframe_label} momentum supports waiting for the 15m trigger.", "constructive", volume_ratio, (f"{timeframe_label} constructive entry timing",))
+        return ConfirmationResult(False, -5, f"{timeframe_label} is not clean enough for immediate long entry.", "unclear", volume_ratio, (f"{timeframe_label} entry unclear",))
+
+    reversal = close > open_price and lower_wick_ratio > 0.42 and volume_ratio >= 1.05
+    breakdown = close < previous_low and volume_ratio >= 0.95
+    pullback_reject = high >= ema20 >= close and close < open_price and rsi <= 52
+    constructive = close <= ema8 <= ema20 and rsi <= 50 and body <= atr * 1.4
+    if reversal:
+        return ConfirmationResult(False, -14, f"{timeframe_label} shows recovery against the short entry.", "reversal", volume_ratio, (f"{timeframe_label} bullish rejection",))
+    if breakdown:
+        return ConfirmationResult(True, 5, f"{timeframe_label} is breaking local support with acceptable volume.", "breakout", volume_ratio, (f"{timeframe_label} fast breakdown",))
+    if pullback_reject:
+        return ConfirmationResult(True, 4, f"{timeframe_label} rejected EMA20 after a controlled bounce.", "reclaim", volume_ratio, (f"{timeframe_label} pullback rejection",))
+    if constructive:
+        return ConfirmationResult(True, 2, f"{timeframe_label} momentum supports waiting for the 15m trigger.", "constructive", volume_ratio, (f"{timeframe_label} constructive entry timing",))
+    return ConfirmationResult(False, -5, f"{timeframe_label} is not clean enough for immediate short entry.", "unclear", volume_ratio, (f"{timeframe_label} entry unclear",))
+
+
 def setup_is_clean(candles: list[dict], signal: TelegramSignal) -> bool:
     atr = average_true_range_local(candles) or max(signal.current_price * 0.015, 1e-8)
     structure = market_structure(candles)
@@ -1548,26 +1684,43 @@ def format_signal_followup(symbol: str, event: str, pnl: float, price: float) ->
 
 
 def format_signal_followup_v2(symbol: str, event: str, pnl: float, price: float) -> str:
-    if event.startswith("TP"):
-        event_text = f"{event} \u2714"
-    elif "Stop" in event:
-        event_text = f"{event} \u274c"
-    elif "Invalidated" in event:
-        event_text = f"{event} \u26a0"
-    elif "running" in event.lower():
-        event_text = f"{event} \u23f3"
+    event_lower = event.lower()
+    if event.startswith("TP3") or "full take" in event_lower:
+        event_text = "\U0001f3c6 FULL TAKE PROFIT — TRADE COMPLETE"
+    elif event.startswith("TP2"):
+        event_text = "\u2705 TP2 HIT — PARTIAL PROFIT LOCKED"
+    elif event.startswith("TP1"):
+        event_text = "\u2705 TP1 HIT — SCALE OR TRAIL"
+    elif event.startswith("TP"):
+        event_text = f"\u2705 {event.upper()}"
+    elif "stop" in event_lower:
+        event_text = "\u274c STOP LOSS HIT — TRADE CLOSED"
+    elif "invalidated" in event_lower or "trade invalidated" in event_lower:
+        event_text = "\u26a0 TRADE INVALIDATED — STRUCTURE BROKEN"
+    elif "running" in event_lower:
+        event_text = "\u23f3 TRADE IN PROGRESS"
     else:
-        event_text = event
-    return "\n".join(
-        [
-            f"{symbol} Signal Update",
-            event_text,
-            f"Price: {format_price(price)}",
-            f"Result: {pnl:+.2f}%",
-            "",
-            "Probability-based tracking. Manage risk according to your own plan.",
-        ]
-    )
+        event_text = event.upper()
+    lines = [
+        "VYPEXROCK SIGNAL LIFECYCLE",
+        "",
+        f"Pair: {friendly_asset_name(symbol)}",
+        event_text,
+        f"Mark Price: {format_price(price)}",
+        f"Unrealized / Realized: {pnl:+.2f}%",
+    ]
+    if event.startswith("TP1"):
+        lines.append("Action: Consider partial take-profit and move stop to breakeven.")
+    elif event.startswith("TP2"):
+        lines.append("Action: TP2 secured — trail remainder toward TP3 or de-risk.")
+    elif event.startswith("TP3"):
+        lines.append("Action: Full target reached. Close remainder per your plan.")
+    elif "stop" in event_lower:
+        lines.append("Reason: Invalidation level breached. Original setup no longer valid.")
+    elif "invalidated" in event_lower:
+        lines.append("Reason: Setup failed before entry or structure broke. Do not chase.")
+    lines.extend(["", "Not financial advice. Probability-based tracking only."])
+    return "\n".join(lines)
 
 
 def format_watchlist_alert(signal: TelegramSignal) -> str:

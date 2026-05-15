@@ -1,26 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, BookOpenText, Bot, ChevronRight, Crown, LayoutGrid, LineChart, LogOut, ScanSearch, ShieldCheck, Star, Users, WalletCards } from "lucide-react";
+import { Bell, Bot, BrainCircuit, ChevronRight, Crown, Home, LineChart, LogOut, NotebookPen, ScanSearch, ShieldCheck, Star, Users, WalletCards } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuthStore } from "@/lib/store";
 import { VypexrockLogo } from "@/components/vypexrock-logo";
+import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { href: "/", label: "Dashboard", icon: LayoutGrid },
-  { href: "/ai", label: "Vypexrock AI", icon: Bot },
-  { href: "/chart-analyzer", label: "Chart Analyzer", icon: ScanSearch },
-  { href: "/about-crypto", label: "About Crypto", icon: BookOpenText },
-  { href: "/community", label: "Community", icon: Users },
-  { href: "/backtest", label: "Backtest", icon: LineChart },
-  { href: "/pricing", label: "Pricing", icon: WalletCards },
-  { href: "/watchlist", label: "Watchlist", icon: Star },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/terminal", label: "Terminal", icon: BrainCircuit },
+  { href: "/chart-analyzer", label: "Charts", icon: ScanSearch },
+  { href: "/ai", label: "AI", icon: Bot },
+  { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/alerts", label: "Alerts", icon: Bell }
 ];
 
 export function Navbar() {
+  const pathname = usePathname();
+  const isLanding = pathname === "/";
   const { user, clearSession } = useAuthStore();
   const fallbackAvatarUrl = user?.email ? `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(user.email)}` : null;
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
@@ -47,74 +48,64 @@ export function Navbar() {
         })
       );
     };
-
     updateClock();
     const timer = window.setInterval(updateClock, 1000);
     return () => window.clearInterval(timer);
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#02040c]/70 shadow-[0_18px_70px_rgba(0,0,0,0.34)] backdrop-blur-2xl">
-      <div className="mx-auto flex max-w-none items-center justify-between gap-1.5 px-2.5 py-2.5 sm:gap-4 sm:px-5 sm:py-3 lg:px-8 lg:py-4">
-        <div className="min-w-0 flex items-center gap-4">
-          <Link href="/" className="block min-w-0">
+    <header className={cn("vx-navbar sticky top-0 z-40 border-b backdrop-blur-xl", isLanding ? "border-transparent bg-transparent" : "border-white/[0.06] bg-[#030405]/85")}>
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-2 px-3 py-2.5 sm:px-5 sm:py-3 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link href="/" className="block min-w-0 shrink-0">
             <VypexrockLogo className="mobile-logo-scale" />
           </Link>
-
-          <div className="hidden items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-semibold text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.1)] 2xl:flex">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Members workspace online
-          </div>
+          {!isLanding ? (
+            <span className="vx-eyebrow hidden lg:inline-flex">Workspace</span>
+          ) : null}
         </div>
 
-        <div className="hidden items-center gap-2 2xl:flex">
-          {navLinks.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-sm font-medium text-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:-translate-y-0.5 hover:border-cyan-300/22 hover:bg-cyan-300/10 hover:text-white hover:shadow-[0_12px_32px_rgba(34,211,238,0.1)]"
-            >
-              <Icon className="h-4 w-4 text-white/46 transition group-hover:text-cyan-100" />
-              {label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-          <div className="hidden rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/55 xl:block">
-            UTC now {utcClock || "--:--:--"}
-          </div>
-          {user ? (
-            <div className="flex items-center gap-2">
+        <nav className="hidden items-center gap-1 md:flex">
+          {navLinks.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+            return (
               <Link
-                href="/profile"
-                className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white transition hover:border-white/20"
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
+                  active ? "bg-white/[0.08] text-white" : "text-white/55 hover:bg-white/[0.04] hover:text-white"
+                )}
               >
-                {avatarUrl ? <img src={avatarUrl} alt={user.email} className="h-9 w-9 rounded-full border border-white/10 bg-white/5" /> : null}
-                <div className="hidden text-left sm:block">
-                  <p className="text-sm font-medium text-white">{user.full_name ?? "Member"}</p>
-                  <p className="text-xs text-white/45">{user.email}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-white/45" />
+                <Icon className="h-4 w-4" strokeWidth={1.75} />
+                <span className="hidden lg:inline">{label}</span>
               </Link>
-              <button
-                className="hidden h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white transition hover:border-white/20 sm:flex"
-                onClick={clearSession}
-                aria-label="Log out"
-              >
+            );
+          })}
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <ThemeToggle />
+          <span className="vx-nav-clock hidden text-xs text-white/45 xl:inline">UTC {utcClock || "—"}</span>
+          {user ? (
+            <>
+              <Link href="/profile" className="vx-btn-ghost hidden items-center gap-2 py-2 sm:inline-flex">
+                {avatarUrl ? <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full" /> : null}
+                <span className="max-w-[120px] truncate text-sm">{user.full_name ?? "Member"}</span>
+              </Link>
+              <button type="button" onClick={clearSession} className="vx-btn-ghost hidden p-2.5 sm:inline-flex" aria-label="Log out">
                 <LogOut className="h-4 w-4" />
               </button>
-            </div>
+            </>
           ) : (
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-300 via-violet-500 to-fuchsia-400 px-4 py-2 text-sm font-extrabold text-slate-950 shadow-[0_16px_46px_rgba(108,92,255,0.34)] transition hover:-translate-y-0.5 hover:brightness-110"
-            >
+            <Link href="/login" className="vx-btn-primary text-sm">
               <Crown className="h-4 w-4" />
-              Access platform
+              <span className="hidden sm:inline">Sign in</span>
             </Link>
           )}
+          <Link href="/terminal" className="vx-btn-ghost hidden p-2.5 md:hidden" aria-label="Terminal">
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </header>

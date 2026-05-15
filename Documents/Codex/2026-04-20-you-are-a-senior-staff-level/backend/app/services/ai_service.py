@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from base64 import b64encode
 from urllib.parse import quote
 
 import httpx
@@ -48,6 +49,20 @@ class AIExplanationService:
                 return live_response
 
         return await self._web_fallback_chat(clean_message, mode=mode)
+
+    async def chat_with_image(self, message: str, image_bytes: bytes, *, mime_type: str = "image/jpeg") -> AIChatResponse:
+        clean_message = message.strip() or "Analyze this trading chart screenshot."
+        if settings.openai_api_key:
+            live_response = await self._openai_image_chat(clean_message, image_bytes, mime_type=mime_type)
+            if live_response:
+                return live_response
+        return AIChatResponse(
+            answer=(
+                "I received the chart screenshot, but live image analysis is not configured on this backend yet. "
+                "Use /ask with the symbol, timeframe, trend context, and visible levels, and I will still give a risk-aware trading read."
+            ),
+            used_live_ai=False,
+        )
 
     def _resolve_providers(self) -> list[str]:
         explicit = settings.ai_provider.lower().strip()
@@ -148,6 +163,47 @@ class AIExplanationService:
             used_web_search=bool(settings.openai_enable_web_search),
             sources=self._extract_sources(payload),
         )
+
+    async def _openai_image_chat(self, message: str, image_bytes: bytes, *, mime_type: str) -> AIChatResponse | None:
+        instructions = (
+            self._build_system_prompt("short")
+            + "\nYou are analyzing a user-supplied trading chart screenshot. Read visible candles, levels, indicators, trend, liquidity, and risk. "
+            "If the image is unclear, say what cannot be verified. Do not guarantee profit."
+        )
+        data_url = f"data:{mime_type};base64,{b64encode(image_bytes).decode('ascii')}"
+        headers = {
+            "Authorization": f"Bearer {settings.openai_api_key}",
+            "Content-Type": "application/json",
+        }
+        body: dict = {
+            "model": settings.openai_model,
+            "instructions": instructions,
+            "input": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": message},
+                        {"type": "input_image", "image_url": data_url},
+                    ],
+                }
+            ],
+        }
+        try:
+            async with httpx.AsyncClient(timeout=60, trust_env=False) as client:
+                response = await client.post("https://api.openai.com/v1/responses", json=body, headers=headers)
+                response.raise_for_status()
+                payload = response.json()
+        except httpx.HTTPStatusError as exc:
+            detail = exc.response.text[:500] if exc.response is not None else "No response body"
+            logger.warning("OpenAI image analysis request failed: %s %s", exc.response.status_code if exc.response else "unknown", detail)
+            return None
+        except Exception as exc:
+            logger.warning("OpenAI image analysis request errored: %s %r", exc.__class__.__name__, exc)
+            return None
+        answer = self._extract_response_text(payload).strip()
+        if not answer:
+            return None
+        return AIChatResponse(answer=answer, used_live_ai=True, used_web_search=False, sources=[])
 
     async def _nvidia_chat(
         self,
