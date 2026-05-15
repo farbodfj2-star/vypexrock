@@ -7,7 +7,7 @@ import { ChartAnalysisOverlay } from "@/components/chart-analysis-overlay";
 import { ChartAnalysisResult } from "@/components/chart-analysis-result";
 import { ChartAnalyzerForm } from "@/components/chart-analyzer-form";
 import { TalkToChartPanel } from "@/components/talk-to-chart-panel";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, resolveApiAssetUrl } from "@/lib/api";
 import { commoditySymbols, cryptoSymbols, displayAssetLabel, forexSymbols, getAsset, getTradingViewConfig, mergeMarketRows, stockSymbols } from "@/lib/asset-catalog";
 import { buildMockChartAnalysis } from "@/lib/mock-chart-analysis";
 import type { ChartAnalysisResult as AnalysisResult } from "@/lib/mock-chart-analysis";
@@ -413,7 +413,7 @@ async function fetchAnalysis(symbol: string, timeframe: string, strategy: string
     };
   }
 
-  return apiFetch<AnalysisResult>("/chart/analyze", {
+  const result = await apiFetch<AnalysisResult>("/chart/analyze", {
     method: "POST",
     body: JSON.stringify({
       symbol,
@@ -423,6 +423,12 @@ async function fetchAnalysis(symbol: string, timeframe: string, strategy: string
       prompt
     })
   });
+
+  return {
+    ...result,
+    chartImageUrl: resolveApiAssetUrl(result.chartImageUrl) ?? undefined,
+    analyzedChartImageUrl: resolveApiAssetUrl(result.analyzedChartImageUrl) ?? undefined
+  };
 }
 
 function buildTradingViewUrl(symbol: string, interval: string, theme: "dark" | "light") {

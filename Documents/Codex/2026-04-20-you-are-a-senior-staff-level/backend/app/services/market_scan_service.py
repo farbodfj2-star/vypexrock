@@ -37,6 +37,18 @@ def _direction_label(bias: str) -> str:
     return "Wait"
 
 
+def _passes_scan_quality(*, bias: str, confidence: int, risk_reward: float, structure: str) -> bool:
+    if bias not in {"long", "short"}:
+        return False
+    if confidence < 72:
+        return False
+    if risk_reward < 1.35:
+        return False
+    if structure == "range" and confidence < 80:
+        return False
+    return True
+
+
 def _trigger_text(structure: str, bias: str) -> str:
     if structure == "breakout" and bias == "long":
         return "Break and hold above range high"
@@ -57,7 +69,13 @@ class MarketScanService:
     async def scan_opportunities(self, *, limit: int = 12, timeframe: str = "15m") -> list[dict[str, Any]]:
         dashboard = await self.market_service.fetch_dashboard()
         ranked = sorted(dashboard, key=lambda row: float(row.get("volume_24h", 0)), reverse=True)
-        symbols = [str(row["symbol"]) for row in ranked[: max(limit * 2, 16)]]
+        hot = await self.market_service.fetch_hot_usdt_symbols(limit=max(limit * 2, 20))
+        symbols = list(
+            dict.fromkeys(
+                [str(row["symbol"]) for row in ranked[: max(limit * 2, 16)]]
+                + [symbol for symbol in hot if symbol.endswith("USDT")]
+            )
+        )[: max(limit * 3, 24)]
 
         async def scan_symbol(symbol: str) -> dict[str, Any] | None:
             try:
@@ -68,12 +86,19 @@ class MarketScanService:
                 ticker = next((row for row in ranked if row["symbol"] == symbol), {})
                 volume = float(ticker.get("volume_24h", 0))
                 change = float(ticker.get("change_24h", 0))
-                tier = _tier_from_confidence(computed.confidence, computed.bias)
-                if tier == "No Trade":
-                    return None
                 risk_distance = abs(float(computed.entry_high) - float(computed.stop_loss)) or 1e-8
                 reward_distance = abs(float(computed.take_profit_2) - float(computed.entry_high))
                 rr = reward_distance / risk_distance
+                if not _passes_scan_quality(
+                    bias=computed.bias,
+                    confidence=int(computed.confidence),
+                    risk_reward=rr,
+                    structure=computed.structure_state,
+                ):
+                    return None
+                tier = _tier_from_confidence(computed.confidence, computed.bias)
+                if tier == "No Trade":
+                    return None
                 return {
                     "symbol": symbol,
                     "tier": tier,

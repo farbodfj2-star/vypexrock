@@ -22,6 +22,8 @@ import { AlertCard } from "@/components/alert-card";
 import { DashboardWidget } from "@/components/dashboard-widget";
 import { JournalSummaryCard, TradingJournalCard } from "@/components/trading-journal-card";
 import { MarketScannerTable } from "@/components/market-scanner-table";
+import { LiveTickerStrip } from "@/components/terminal/live-ticker-strip";
+import { VolumeHeatmap } from "@/components/terminal/volume-heatmap";
 import { TradingChart } from "@/components/vx/trading-chart";
 import { ScrollReveal } from "@/components/vx/scroll-reveal";
 import { useMarketStream } from "@/hooks/use-market-stream";
@@ -149,6 +151,8 @@ export default function TerminalPage() {
         </p>
       ) : null}
 
+      <LiveTickerStrip rows={rows} />
+
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         <DashboardWidget
           title="Ranked setups"
@@ -171,6 +175,7 @@ export default function TerminalPage() {
       <ScrollReveal className="grid gap-6 2xl:grid-cols-[1.35fr_0.65fr]">
         <MarketScannerTable opportunities={scannerRows} loading={opportunitiesLoading} />
         <div className="space-y-5">
+          <VolumeHeatmap rows={rows} />
           <section className="vx-glass-panel p-5">
             <p className="text-xs uppercase tracking-widest text-white/40">Trading style</p>
             <h2 className="mt-2 text-xl font-semibold text-white">AI memory</h2>

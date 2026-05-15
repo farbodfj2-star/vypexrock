@@ -39,3 +39,8 @@ class ChartAnalysisResponse(BaseModel):
     macdSignal: float
     ema20: float
     ema50: float
+    chartImageUrl: str | None = None
+    analyzedChartImageUrl: str | None = None
+    structureNotes: list[str] = Field(default_factory=list)
+    timeframeAlignment: str = ""
+    marketStructure: str = ""

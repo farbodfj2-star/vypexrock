@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight, ArrowUpDown, Search, Sparkles } from "lucide-react";
 
+import { AssetIcon } from "@/components/asset-icon";
 import { displayAssetLabel, getAsset } from "@/lib/asset-catalog";
 import { formatDataSource, scoreTicker, type MarketDecision, type MarketSignalScore } from "@/lib/market-signals";
 import { cn, formatCompactNumber, formatCurrency } from "@/lib/utils";
@@ -130,8 +131,8 @@ export default function CoinTable({ rows }: CoinTableProps) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-gradient-to-br from-slate-700/70 to-slate-950 text-xs font-semibold text-white">
-                    {assetInitial(row.symbol)}
+                  <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-700/70 to-slate-950">
+                    <AssetIcon symbol={row.symbol} name={row.metadata_name} imageUrl={row.metadata_image} className="h-11 w-11" />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-white">{row.metadata_name ?? displayAssetLabel(row.symbol)}</p>
@@ -184,8 +185,8 @@ export default function CoinTable({ rows }: CoinTableProps) {
                 <tr key={row.symbol} className={cn("border-b border-white/[0.055] transition hover:bg-white/[0.035]", index % 2 === 0 && "bg-white/[0.012]")}>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-gradient-to-br from-slate-700/70 to-slate-950 text-sm font-semibold text-white">
-                        {assetInitial(row.symbol)}
+                      <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-700/70 to-slate-950">
+                        <AssetIcon symbol={row.symbol} name={row.metadata_name} imageUrl={row.metadata_image} className="h-12 w-12" />
                       </div>
                       <div>
                         <p className="font-medium text-white">{row.metadata_name ?? displayAssetLabel(row.symbol)}</p>

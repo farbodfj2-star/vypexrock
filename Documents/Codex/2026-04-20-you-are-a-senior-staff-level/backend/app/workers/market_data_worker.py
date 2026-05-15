@@ -48,6 +48,18 @@ async def seed_metadata() -> None:
         "INJUSDT": "injective-protocol",
         "ARBUSDT": "arbitrum",
         "OPUSDT": "optimism",
+        "WIFUSDT": "dogwifcoin",
+        "BONKUSDT": "bonk",
+        "FETUSDT": "fetch-ai",
+        "TAOUSDT": "bittensor",
+        "JUPUSDT": "jupiter-exchange-solana",
+        "ONDOUSDT": "ondo-finance",
+        "ENAUSDT": "ethena",
+        "PYTHUSDT": "pyth-network",
+        "TIAUSDT": "celestia",
+        "IMXUSDT": "immutable-x",
+        "PENDLEUSDT": "pendle",
+        "LDOUSDT": "lido-dao",
     }
 
     ids = ",".join(symbol_to_id.values())

@@ -35,6 +35,11 @@ export type ChartAnalysisResult = {
   macdSignal?: number;
   ema20?: number;
   ema50?: number;
+  chartImageUrl?: string | null;
+  analyzedChartImageUrl?: string | null;
+  structureNotes?: string[];
+  timeframeAlignment?: string;
+  marketStructure?: string;
 };
 
 type Input = {

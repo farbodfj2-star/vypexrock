@@ -17,6 +17,8 @@ from app.services.signal_alert_service import recent_volume_ratio
 from app.services.signal_alert_service import rsi_local
 from app.services.signal_alert_service import swing_points
 from app.services.signal_alert_service import trend_bias
+from app.core.config import settings
+from app.services.chart_workstation_service import ChartWorkstationService, WorkstationSetup, structure_annotations
 from app.services.signal_service import SignalEngine
 
 AnalysisBias = Literal["long", "short", "neutral"]
@@ -91,6 +93,41 @@ class ChartAnalysisService:
             candles_by_tf=candles_by_tf,
         )
 
+        chart_urls = ("", "")
+        structure_label, bos, choch, sweep = structure_annotations(candles_by_tf[payload.timeframe.lower()] or candles_by_tf["15m"])
+        alignment = (
+            f"4H {contexts['4h'].structure} · 1H {contexts['1h'].structure} · "
+            f"15m {contexts['15m'].structure} · entry {contexts['15m'].bias}"
+        )
+        try:
+            renderer = ChartWorkstationService(output_dir=settings.chart_media_dir)
+            setup = WorkstationSetup(
+                symbol=symbol,
+                timeframe=payload.timeframe,
+                direction=analysis.decision,
+                confidence=analysis.confidence,
+                risk_reward=analysis.risk_reward,
+                entry=(analysis.entry_low + analysis.entry_high) / 2,
+                entry_low=analysis.entry_low,
+                entry_high=analysis.entry_high,
+                stop_loss=analysis.stop_loss,
+                take_profits=analysis.take_profits,
+                support_levels=analysis.support_levels,
+                resistance_levels=analysis.resistance_levels,
+                structure_label=structure_label,
+                bos_label=bos,
+                choch_label=choch,
+                liquidity_sweep=sweep,
+                timeframe_alignment=alignment,
+            )
+            tf_key = payload.timeframe.lower().strip()
+            if tf_key not in candles_by_tf:
+                tf_key = "30m" if tf_key not in {"4h", "1h", "15m"} else tf_key
+            render_candles = candles_by_tf.get(tf_key) or candles_by_tf["30m"]
+            chart_urls = renderer.render_pair(render_candles, setup)
+        except Exception:
+            chart_urls = ("", "")
+
         return ChartAnalysisResponse(
             symbol=symbol,
             timeframe=payload.timeframe,
@@ -119,6 +156,11 @@ class ChartAnalysisService:
             macdSignal=round(main_signal.macd_signal, 4),
             ema20=round(main_signal.ema20, 4),
             ema50=round(main_signal.ema50, 4),
+            chartImageUrl=chart_urls[0] or None,
+            analyzedChartImageUrl=chart_urls[1] or None,
+            structureNotes=list(analysis.notes),
+            timeframeAlignment=alignment,
+            marketStructure=structure_label,
         )
 
 

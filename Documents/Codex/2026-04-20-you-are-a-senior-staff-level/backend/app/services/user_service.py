@@ -5,6 +5,7 @@ from app.core.security import get_password_hash, verify_password
 from app.models.subscription import Plan, Subscription
 from app.models.user import User
 from app.schemas.auth import UserCreate
+from app.services.avatar_service import generate_avatar_url
 
 
 class UserService:
@@ -24,6 +25,7 @@ class UserService:
             email=payload.email.lower(),
             hashed_password=get_password_hash(payload.password),
             full_name=payload.full_name,
+            avatar_url=generate_avatar_url(payload.email.lower()),
         )
         self.db.add(user)
         await self.db.flush()
@@ -40,4 +42,13 @@ class UserService:
         user = await self.get_by_email(email)
         if not user or not verify_password(password, user.hashed_password):
             return None
+        return user
+
+    async def update_profile(self, user: User, *, full_name: str | None = None, avatar_url: str | None = None) -> User:
+        if full_name is not None:
+            user.full_name = full_name
+        if avatar_url is not None:
+            user.avatar_url = avatar_url
+        await self.db.commit()
+        await self.db.refresh(user)
         return user

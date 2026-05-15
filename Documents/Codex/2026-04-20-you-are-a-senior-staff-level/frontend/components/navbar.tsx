@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Bell, Bot, BrainCircuit, ChevronRight, Crown, Home, LineChart, LogOut, NotebookPen, ScanSearch, ShieldCheck, Star, Users, WalletCards } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
+import { resolveApiAssetUrl } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import { VypexrockLogo } from "@/components/vypexrock-logo";
 import { cn } from "@/lib/utils";
@@ -24,16 +25,8 @@ export function Navbar() {
   const isLanding = pathname === "/";
   const { user, clearSession } = useAuthStore();
   const fallbackAvatarUrl = user?.email ? `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(user.email)}` : null;
-  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
-  const avatarUrl = profileAvatar ?? fallbackAvatarUrl;
+  const avatarUrl = resolveApiAssetUrl(user?.avatar_url) ?? fallbackAvatarUrl;
   const [utcClock, setUtcClock] = useState("");
-
-  useEffect(() => {
-    const readAvatar = () => setProfileAvatar(window.localStorage.getItem("vypexrock-profile-avatar"));
-    readAvatar();
-    window.addEventListener("storage", readAvatar);
-    return () => window.removeEventListener("storage", readAvatar);
-  }, []);
 
   useEffect(() => {
     const updateClock = () => {

@@ -430,11 +430,11 @@ class SignalAlertAutomationService:
             return False
         if signal.confidence < settings.telegram_signal_min_confidence:
             return False
-        if signal.quality_score < settings.telegram_signal_min_confidence - 12:
+        if signal.quality_score < settings.telegram_signal_min_confidence - 8:
             return False
         if signal.risk_reward < settings.telegram_signal_min_risk_reward:
             return False
-        if signal.volume_ratio < 0.85:
+        if signal.volume_ratio < 0.92:
             return False
         if signal.confirmation_state in {"failed", "unclear", "rejection"}:
             return False

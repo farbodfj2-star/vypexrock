@@ -43,5 +43,10 @@ class UserRead(Timestamped):
     id: int
     email: EmailStr
     full_name: str | None
+    avatar_url: str | None = None
     is_active: bool
     is_premium: bool
+
+
+class UserProfileUpdate(BaseModel):
+    full_name: str | None = Field(default=None, max_length=255)

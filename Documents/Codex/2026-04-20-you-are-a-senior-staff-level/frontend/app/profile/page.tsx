@@ -1,18 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { BadgeCheck, Camera, Crown, Mail, ShieldCheck, Sparkles, Trash2, UploadCloud, UserCircle2 } from "lucide-react";
+import { ChangeEvent, useRef, useState } from "react";
+import { BadgeCheck, Camera, Crown, Mail, ShieldCheck, Sparkles, UploadCloud, UserCircle2 } from "lucide-react";
 
-import { apiFetch } from "@/lib/api";
+import { apiFetch, resolveApiAssetUrl, uploadUserAvatar } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import type { User } from "@/types";
 
 export default function ProfilePage() {
-  const { token, user } = useAuthStore();
+  const { token, user, setSession } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
   const [avatarPulse, setAvatarPulse] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const profileQuery = useQuery({
     queryKey: ["profile", token],
     queryFn: () => apiFetch<User>("/auth/me", { token }),
@@ -21,33 +21,23 @@ export default function ProfilePage() {
 
   const profile = profileQuery.data ?? user;
   const fallbackAvatarUrl = profile?.email ? `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(profile.email)}` : null;
-  const avatarUrl = avatarDataUrl ?? fallbackAvatarUrl;
+  const avatarUrl = resolveApiAssetUrl(profile?.avatar_url) ?? fallbackAvatarUrl;
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("vypexrock-profile-avatar");
-    if (saved) setAvatarDataUrl(saved);
-  }, []);
-
-  function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
+  async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !token) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const value = String(reader.result);
-      window.localStorage.setItem("vypexrock-profile-avatar", value);
-      setAvatarDataUrl(value);
+    setUploading(true);
+    try {
+      const updated = await uploadUserAvatar(file, token);
+      setSession({ token, user: updated });
       setAvatarPulse(true);
       window.setTimeout(() => setAvatarPulse(false), 850);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function removeAvatar() {
-    window.localStorage.removeItem("vypexrock-profile-avatar");
-    setAvatarDataUrl(null);
-    setAvatarPulse(true);
-    window.setTimeout(() => setAvatarPulse(false), 850);
+      await profileQuery.refetch();
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
   }
 
   return (
@@ -90,19 +80,12 @@ export default function ProfilePage() {
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               <button
                 type="button"
+                disabled={uploading || !token}
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/15"
+                className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-300/15 disabled:opacity-50"
               >
                 <UploadCloud className="h-4 w-4" />
-                Upload image
-              </button>
-              <button
-                type="button"
-                onClick={removeAvatar}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-white/70 transition hover:bg-white/[0.08]"
-              >
-                <Trash2 className="h-4 w-4" />
-                Remove
+                {uploading ? "Uploading…" : "Upload image"}
               </button>
             </div>
             <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -123,7 +106,7 @@ export default function ProfilePage() {
             <ProfileMetric label="Member ID" value={profile ? `#${profile.id}` : "Loading"} />
             <ProfileMetric label="Joined" value={profile?.created_at ? formatDate(profile.created_at) : "Recently"} />
             <ProfileMetric label="Workspace tier" value={profile?.is_premium ? "Premium research access" : "Core member access"} />
-            <ProfileMetric label="Profile completion" value={avatarDataUrl ? "92% complete" : "74% complete"} />
+            <ProfileMetric label="Profile completion" value={profile?.avatar_url ? "92% complete" : "74% complete"} />
           </div>
         </div>
 

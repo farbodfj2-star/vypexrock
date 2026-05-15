@@ -29,6 +29,42 @@ export function ChartAnalysisResult({
 
   return (
     <div className="space-y-3">
+      {analysis.chartImageUrl || analysis.analyzedChartImageUrl ? (
+        <Card title="Chart workstation" isDark={isDark} compact={compact}>
+          <div className="space-y-4">
+            {analysis.chartImageUrl ? (
+              <figure>
+                <figcaption className={isDark ? "mb-2 text-xs uppercase tracking-widest text-slate-400" : "mb-2 text-xs uppercase tracking-widest text-slate-500"}>
+                  Live market chart
+                </figcaption>
+                <img src={analysis.chartImageUrl} alt={`${analysis.symbol} base chart`} className="w-full rounded-2xl border border-white/10" />
+              </figure>
+            ) : null}
+            {analysis.analyzedChartImageUrl ? (
+              <figure>
+                <figcaption className={isDark ? "mb-2 text-xs uppercase tracking-widest text-slate-400" : "mb-2 text-xs uppercase tracking-widest text-slate-500"}>
+                  AI structure overlay · projected path
+                </figcaption>
+                <img src={analysis.analyzedChartImageUrl} alt={`${analysis.symbol} analyzed chart`} className="w-full rounded-2xl border border-cyan-400/20" />
+              </figure>
+            ) : null}
+            {analysis.marketStructure ? (
+              <p className={isDark ? "text-sm text-slate-300" : "text-sm text-slate-600"}>
+                Structure: <span className="font-medium">{analysis.marketStructure}</span>
+                {analysis.timeframeAlignment ? ` · ${analysis.timeframeAlignment}` : ""}
+              </p>
+            ) : null}
+            {analysis.structureNotes?.length ? (
+              <ul className={isDark ? "list-disc space-y-1 pl-5 text-sm text-slate-300" : "list-disc space-y-1 pl-5 text-sm text-slate-600"}>
+                {analysis.structureNotes.slice(0, 4).map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
+
       <Card title="Trade Decision" isDark={isDark} compact={compact}>
         <div className="flex items-start justify-between gap-4">
           <div>

@@ -112,6 +112,9 @@ class Settings(BaseSettings):
 
     free_plan_code: str = "free"
     premium_plan_code: str = "pro"
+    chart_media_dir: str = "media/charts"
+    avatar_upload_dir: str = "media/avatars"
+    public_api_base_url: str = "http://localhost:8000"
 
 
 @lru_cache

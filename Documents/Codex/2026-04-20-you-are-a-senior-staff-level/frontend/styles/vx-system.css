@@ -362,6 +362,19 @@
   backdrop-filter: blur(20px);
 }
 
+.vx-ticker-track {
+  animation: vx-ticker-scroll 42s linear infinite;
+}
+
+@keyframes vx-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @media (max-width: 768px) {
   .vx-hero {
     min-height: auto;
