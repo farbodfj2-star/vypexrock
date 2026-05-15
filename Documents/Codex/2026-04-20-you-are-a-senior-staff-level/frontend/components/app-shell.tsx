@@ -15,7 +15,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const glowRef = useMouseGlow<HTMLDivElement>();
 
   return (
-    <div id="theme-app-shell" ref={glowRef} className="vx-mouse-glow relative min-h-screen">
+    <div id="theme-app-shell" ref={glowRef} className="relative min-h-screen">
+      <div className="vx-mouse-glow pointer-events-none" aria-hidden />
       <div className="pointer-events-none fixed inset-0 overflow-hidden opacity-70" aria-hidden>
         <div className="absolute left-[-10rem] top-[-8rem] h-[28rem] w-[28rem] rounded-full bg-teal-400/[0.05] blur-[100px]" />
         <div className="absolute right-[-8rem] top-[6rem] h-[24rem] w-[24rem] rounded-full bg-violet-500/[0.06] blur-[110px]" />
