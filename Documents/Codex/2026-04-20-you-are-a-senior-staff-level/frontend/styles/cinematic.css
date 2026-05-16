@@ -1,296 +1,276 @@
 /* ─────────────────────────────────────────────────────────────────
-   CINEMATIC SYSTEM — luxury digital cinema for Vypexrock
-   "Less UI. More atmosphere. More cinema."
+   CINEMATIC SYSTEM v2 — graphite, dark glass, minimal cyan accent
+   "Less light. More restraint. Premium institutional cinema."
+
+   Design tokens:
+     #000        true black floor
+     #06080d     graphite mid
+     #0d1118     dark slate
+     #1a2030     panel edge
+     rgba(125,211,252, 0.08)   single cyan accent — used sparingly
+     rgba(255,255,255, 0.04–0.10)   glass surfaces
+
+   Rules:
+     - All decorative layers MUST be pointer-events: none.
+     - All motion MUST use transform/opacity only.
+     - Animation durations: 0.4s–14s. No 0.05s, no choppy.
+     - Easing: cubic-bezier(0.22, 0.61, 0.36, 1) for cinematic feel.
    ───────────────────────────────────────────────────────────────── */
 
-/* === ROOT TOKENS ================================================== */
 .cinematic-film {
   --c-ink: #f6f7fb;
   --c-ink-soft: rgba(246, 247, 251, 0.62);
-  --c-ink-faint: rgba(246, 247, 251, 0.28);
+  --c-ink-quiet: rgba(246, 247, 251, 0.32);
+  --c-ink-faint: rgba(246, 247, 251, 0.16);
   --c-cyan: #7dd3fc;
   --c-cyan-deep: #38bdf8;
-  --c-violet: #c4b5fd;
-  --c-violet-deep: #8b5cf6;
-  --c-amber: #fcd34d;
-  --c-rose: #fda4af;
-  --c-emerald: #6ee7b7;
+  --c-edge: rgba(255, 255, 255, 0.06);
+  --c-edge-strong: rgba(255, 255, 255, 0.12);
+  --c-glass: rgba(255, 255, 255, 0.025);
+  --c-graphite: #06080d;
+  --c-graphite-2: #0a0d14;
+  --c-panel: #0d1118;
 
   --ease-cine: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-snap: cubic-bezier(0.5, 1.6, 0.4, 1);
 
   position: relative;
   isolation: isolate;
-  background: radial-gradient(ellipse at top, #04070d 0%, #010204 60%, #000 100%);
+  background: #000;
   color: var(--c-ink);
-  overflow: visible;
+  /* mouse-parallax CSS vars — driven by JS rAF loop */
+  --mx: 0;
+  --my: 0;
+  /* intro progress (0–1) — driven by JS */
+  --intro: 0;
+  /* scroll progress within hero (0–1) — driven by JS */
+  --hero-progress: 0;
 }
 
-/* film grain on the entire page — adds analog feel */
+/* very subtle film grain on the whole page — frozen, not animated */
 .cinematic-film::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.96 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  z-index: 1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.96 0 0 0 0 1 0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   mix-blend-mode: overlay;
-  opacity: 0.55;
-  animation: cine-grain 0.6s steps(2) infinite;
-}
-
-@keyframes cine-grain {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(-3%, 2%); }
-  50% { transform: translate(2%, -1%); }
-  75% { transform: translate(-1%, 3%); }
-  100% { transform: translate(0, 0); }
+  opacity: 0.5;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   HERO — opening sequence
+   HERO STAGE
    ═══════════════════════════════════════════════════════════════════ */
 .cinematic-hero-stage {
+  position: relative;
+  width: 100%;
   background: #000;
   color: var(--c-ink);
+  contain: layout paint;
 }
 
-/* deep nebula breathing slowly */
-.cinematic-nebula {
+/* deep ambient — only ONE soft glow, far away, almost imperceptible */
+.cinematic-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 50% at 50% 38%, rgba(56, 189, 248, 0.18), transparent 60%),
-    radial-gradient(ellipse 80% 40% at 30% 70%, rgba(139, 92, 246, 0.12), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 75% 60%, rgba(45, 212, 191, 0.07), transparent 65%);
-  filter: blur(40px);
-  animation: cine-breathe 14s ease-in-out infinite;
+    radial-gradient(ellipse 50% 35% at 50% 42%, rgba(125, 211, 252, 0.07), transparent 70%),
+    radial-gradient(ellipse 70% 55% at 50% 100%, rgba(13, 17, 24, 0.9), transparent 60%);
+  opacity: calc(0.35 + var(--intro) * 0.4);
+  transform: translate3d(calc(var(--mx) * 12px), calc(var(--my) * 6px), 0);
+  transition: opacity 0.6s var(--ease-cine);
   will-change: transform, opacity;
 }
 
-@keyframes cine-breathe {
-  0%, 100% { transform: scale(1) translate(0, 0); }
-  50% { transform: scale(1.08) translate(2%, -1%); }
-}
-
-/* heavy cinematic vignette */
+/* heavy vignette — keeps eye at center */
 .cinematic-vignette {
-  background:
-    radial-gradient(ellipse 90% 70% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.55) 75%, #000 100%);
-  pointer-events: none;
-}
-
-/* slow horizontal scanner sweep — implies machine humming */
-.cinematic-scanner {
-  background: linear-gradient(
-    180deg,
-    transparent 30%,
-    rgba(125, 211, 252, 0.06) 49.6%,
-    rgba(125, 211, 252, 0.13) 50%,
-    rgba(125, 211, 252, 0.06) 50.4%,
-    transparent 70%
-  );
-  background-size: 100% 200%;
-  animation: cine-scan 9s linear infinite;
-  mix-blend-mode: screen;
-}
-
-@keyframes cine-scan {
-  0% { background-position: 0 -100%; }
-  100% { background-position: 0 100%; }
-}
-
-/* film grain texture inside hero */
-.cinematic-grain {
-  background-image:
-    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 3px 3px;
-  opacity: 0.18;
-  mix-blend-mode: overlay;
-}
-
-/* ambient orbs — slow drift */
-.cinematic-orb-soft {
   position: absolute;
-  width: 520px;
-  height: 520px;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(56, 189, 248, 0.22), transparent 65%);
-  filter: blur(50px);
-  transition: transform 0.4s var(--ease-cine), opacity 0.6s ease;
-  will-change: transform;
-}
-
-.cinematic-orb-violet {
-  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.22), transparent 65%);
-  width: 420px;
-  height: 420px;
-}
-
-.cinematic-orb-cyan {
-  background: radial-gradient(circle at center, rgba(34, 211, 238, 0.18), transparent 65%);
-  width: 360px;
-  height: 360px;
-}
-
-/* lens flare moving with progress */
-.cinematic-lens-flare {
-  width: 320px;
-  height: 320px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.18) 0%, transparent 30%),
-    radial-gradient(circle at center, rgba(125, 211, 252, 0.18) 30%, transparent 60%);
-  filter: blur(32px);
-  mix-blend-mode: screen;
+  inset: 0;
   pointer-events: none;
-  transition: opacity 0.4s ease, left 0.05s linear;
+  background: radial-gradient(
+    ellipse 100% 80% at 50% 50%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.55) 80%,
+    #000 100%
+  );
 }
 
-/* tiny luxury mark */
+/* horizon line — single subtle accent, not animated */
+.cinematic-horizon {
+  position: absolute;
+  inset: auto 0 28% 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(125, 211, 252, 0.18) 20%,
+    rgba(125, 211, 252, 0.32) 50%,
+    rgba(125, 211, 252, 0.18) 80%,
+    transparent 100%
+  );
+  opacity: calc(var(--intro) * 0.85);
+  transition: opacity 1s var(--ease-cine);
+}
+
+/* hero canvas — chart layer */
+.cinematic-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: calc(max(0, var(--intro) - 0.4) / 0.6);
+  transform: translate3d(calc(var(--mx) * 4px), calc(var(--my) * 2px), 0);
+  transition: opacity 0.5s var(--ease-cine);
+  will-change: transform, opacity;
+}
+
+/* ─── tiny corner mark ─── */
 .cinematic-mark {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  letter-spacing: 0.32em;
+  gap: 12px;
+  font-size: 10px;
+  letter-spacing: 0.42em;
   text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.55);
+  color: rgba(246, 247, 251, 0.5);
   font-feature-settings: "ss01", "ss02";
-  transition: opacity 0.6s var(--ease-cine), transform 0.6s var(--ease-cine);
 }
 
-.cinematic-mark-dot {
-  width: 6px;
-  height: 6px;
+.cinematic-mark__dot {
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--c-cyan);
-  box-shadow: 0 0 12px rgba(125, 211, 252, 0.9);
-  animation: cine-pulse 2.4s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(125, 211, 252, 0.8);
 }
 
-@keyframes cine-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(0.85); }
-  50% { opacity: 1; transform: scale(1.15); }
+.cinematic-mark__bar {
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: rgba(125, 211, 252, 0.35);
 }
 
-/* the cinematic title — large, breathing, expensive */
+/* ─── title ─── */
 .cinematic-title {
   font-family: var(--font-display);
   font-weight: 200;
-  font-size: clamp(3.4rem, 9vw, 9rem);
-  line-height: 0.94;
-  letter-spacing: -0.045em;
+  font-size: clamp(3rem, 8vw, 7.5rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
   color: var(--c-ink);
   text-align: center;
-  transition: opacity 0.8s var(--ease-cine), transform 0.8s var(--ease-cine), letter-spacing 0.8s var(--ease-cine);
   text-wrap: balance;
 }
 
-.cinematic-title-line {
+.cinematic-title__line {
   display: block;
   font-weight: 200;
-  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
-.cinematic-title-line--accent {
+.cinematic-title__line--accent {
   font-style: italic;
   font-weight: 300;
-  background: linear-gradient(120deg, #7dd3fc 0%, #c4b5fd 50%, #f0abfc 100%);
+  background: linear-gradient(120deg, #d6e4ee 0%, #7dd3fc 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.cinematic-title-line--quiet {
-  font-weight: 200;
-  color: rgba(246, 247, 251, 0.4);
+.cinematic-title__line--quiet {
+  color: rgba(246, 247, 251, 0.32);
 }
 
+/* fade-up reveal — used by JS-controlled .is-in */
+.cine-fade-up {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition:
+    opacity 0.9s var(--ease-cine),
+    transform 0.9s var(--ease-cine);
+  will-change: opacity, transform;
+}
+
+.cine-fade-up.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* sub */
 .cinematic-sub {
-  font-size: clamp(0.95rem, 1.2vw, 1.05rem);
-  line-height: 1.65;
-  color: rgba(246, 247, 251, 0.55);
+  font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+  line-height: 1.7;
+  color: rgba(246, 247, 251, 0.52);
   font-weight: 300;
-  letter-spacing: 0.005em;
-  transition: opacity 0.7s var(--ease-cine), transform 0.7s var(--ease-cine);
   text-wrap: balance;
 }
 
-/* CTAs — almost invisible, just whispers */
+/* ─── CTAs ─── */
 .cinematic-cta {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--c-ink);
-  padding: 16px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 14px 26px;
+  border: 1px solid var(--c-edge);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  transition: all 0.5s var(--ease-cine);
-  position: relative;
-  overflow: hidden;
-}
-
-.cinematic-cta::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.08) 50%, transparent 70%);
-  transform: translateX(-100%);
-  transition: transform 0.7s var(--ease-cine);
+  transition:
+    border-color 0.5s var(--ease-cine),
+    background 0.5s var(--ease-cine),
+    transform 0.4s var(--ease-cine),
+    color 0.5s var(--ease-cine);
+  cursor: pointer;
 }
 
 .cinematic-cta:hover {
   border-color: rgba(125, 211, 252, 0.4);
-  background: rgba(125, 211, 252, 0.05);
-  box-shadow: 0 0 32px rgba(125, 211, 252, 0.15), inset 0 0 24px rgba(125, 211, 252, 0.04);
+  background: rgba(125, 211, 252, 0.04);
   transform: translateY(-1px);
 }
 
-.cinematic-cta:hover::before {
-  transform: translateX(100%);
-}
-
 .cinematic-cta--strong {
-  background: linear-gradient(135deg, rgba(125, 211, 252, 0.12), rgba(139, 92, 246, 0.12));
-  border-color: rgba(125, 211, 252, 0.3);
-  padding: 18px 36px;
-  font-size: 14px;
+  background: rgba(125, 211, 252, 0.06);
+  border-color: rgba(125, 211, 252, 0.22);
+  padding: 16px 32px;
+  font-size: 13px;
 }
 
 .cinematic-cta--strong:hover {
-  background: linear-gradient(135deg, rgba(125, 211, 252, 0.2), rgba(139, 92, 246, 0.2));
-  box-shadow: 0 0 48px rgba(125, 211, 252, 0.3);
+  background: rgba(125, 211, 252, 0.1);
+  border-color: rgba(125, 211, 252, 0.4);
 }
 
 .cinematic-cta-quiet {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 300;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.45);
-  padding: 14px 0;
+  color: rgba(246, 247, 251, 0.42);
+  padding: 12px 0;
   position: relative;
-  transition: color 0.5s ease;
+  transition: color 0.5s var(--ease-cine);
+  cursor: pointer;
 }
 
 .cinematic-cta-quiet::after {
   content: "";
   position: absolute;
   left: 0;
-  bottom: 6px;
+  bottom: 4px;
   width: 0;
   height: 1px;
-  background: var(--c-cyan);
+  background: rgba(125, 211, 252, 0.6);
   transition: width 0.5s var(--ease-cine);
 }
 
@@ -302,122 +282,92 @@
   width: 100%;
 }
 
-/* scroll hint — tiny, breathing */
+/* ─── scroll hint ─── */
 .cinematic-scroll-hint {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  color: rgba(246, 247, 251, 0.4);
-  transition: opacity 0.4s ease;
+  gap: 10px;
+  color: rgba(246, 247, 251, 0.32);
+  pointer-events: none;
 }
 
-.cinematic-scroll-line {
+.cinematic-scroll-hint__line {
   width: 1px;
-  height: 40px;
-  background: linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.6), transparent);
-  animation: cine-scroll 2s ease-in-out infinite;
+  height: 32px;
+  background: linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.5), transparent);
+  animation: cine-scroll-line 2.4s ease-in-out infinite;
 }
 
-@keyframes cine-scroll {
-  0%, 100% { transform: translateY(-10px); opacity: 0.3; }
-  50% { transform: translateY(10px); opacity: 1; }
+@keyframes cine-scroll-line {
+  0%, 100% { transform: translateY(-8px); opacity: 0.25; }
+  50% { transform: translateY(8px); opacity: 0.9; }
 }
 
-.cinematic-scroll-label {
-  font-size: 10px;
-  letter-spacing: 0.32em;
+.cinematic-scroll-hint__label {
+  font-size: 9px;
+  letter-spacing: 0.36em;
   text-transform: uppercase;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   AI HUD READOUT — floating data visible only at certain progress
-   ═══════════════════════════════════════════════════════════════════ */
-.cinematic-ai-overlay {
-  width: min(580px, 80vw);
-  pointer-events: none;
-  z-index: 5;
-}
-
+/* ─── HUD overlays inside hero ─── */
 .cinematic-readout {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-left: 32%;
   font-family: ui-monospace, "SF Mono", "Geist Mono", monospace;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(125, 211, 252, 0.85);
+  color: rgba(125, 211, 252, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.cinematic-readout-line {
+.cinematic-readout__line {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: opacity 0.4s var(--ease-cine), transform 0.4s var(--ease-cine);
-  text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  transition: opacity 0.5s var(--ease-cine), transform 0.5s var(--ease-cine);
+  will-change: opacity, transform;
 }
 
-.cinematic-readout-pulse {
-  width: 5px;
-  height: 5px;
+.cinematic-readout__line.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.cinematic-readout__pulse {
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background: var(--c-cyan);
-  box-shadow: 0 0 10px var(--c-cyan-deep);
-  animation: cine-pulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--c-cyan-deep);
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   SIGNAL LOCK HUD — small, quiet, never a card
-   ═══════════════════════════════════════════════════════════════════ */
+/* signal lock — the only "card" allowed, kept very dark */
 .cinematic-signal-lock {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 18px 22px;
-  border: 1px solid rgba(125, 211, 252, 0.18);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(8, 14, 30, 0.55), rgba(2, 4, 11, 0.45));
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow:
-    0 0 30px rgba(56, 189, 248, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  min-width: 220px;
+  padding: 16px 20px;
+  border: 1px solid var(--c-edge);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(13, 17, 24, 0.7), rgba(6, 8, 13, 0.6));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  min-width: 200px;
   font-family: ui-monospace, "SF Mono", monospace;
-  position: relative;
-  overflow: hidden;
-}
-
-.cinematic-signal-lock::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    transparent 30%,
-    rgba(125, 211, 252, 0.08) 50%,
-    transparent 70%
-  );
-  animation: cine-edge-sweep 4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes cine-edge-sweep {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
 }
 
 .cinematic-signal-lock__label {
   font-size: 9px;
   letter-spacing: 0.36em;
-  color: rgba(125, 211, 252, 0.7);
+  color: rgba(125, 211, 252, 0.6);
 }
 
 .cinematic-signal-lock__value {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 200;
   letter-spacing: -0.02em;
   color: var(--c-ink);
@@ -426,43 +376,42 @@
 
 .cinematic-signal-lock__bar {
   width: 100%;
-  height: 2px;
-  background: rgba(125, 211, 252, 0.1);
+  height: 1px;
+  background: rgba(125, 211, 252, 0.08);
   border-radius: 999px;
   overflow: hidden;
 }
 
-.cinematic-signal-lock__bar span {
+.cinematic-signal-lock__bar > span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--c-cyan-deep), var(--c-violet-deep));
-  box-shadow: 0 0 12px rgba(125, 211, 252, 0.8);
+  background: linear-gradient(90deg, var(--c-cyan-deep), rgba(125, 211, 252, 0.4));
   transition: width 0.6s var(--ease-cine);
 }
 
 .cinematic-signal-lock__meta {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: rgba(246, 247, 251, 0.55);
+  gap: 8px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: rgba(246, 247, 251, 0.42);
 }
 
-.cinematic-signal-lock__dot {
-  width: 4px;
-  height: 4px;
+.cinematic-signal-lock__sep {
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
-  background: rgba(246, 247, 251, 0.4);
+  background: rgba(246, 247, 251, 0.32);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   CINEMATIC ACTS — non-card, atmospheric sections
+   ACTS
    ═══════════════════════════════════════════════════════════════════ */
 .cinematic-act {
   position: relative;
   width: 100%;
-  min-height: 220vh;
+  min-height: 200vh;
   isolation: isolate;
 }
 
@@ -478,9 +427,9 @@
   overflow: hidden;
 }
 
-/* === ACT I: silence becomes signal — typography breathing ============ */
+/* ── Act I: typography that breathes ── */
 .cinematic-act--breathe {
-  background: linear-gradient(180deg, #000 0%, #02050b 50%, #000 100%);
+  background: linear-gradient(180deg, #000 0%, var(--c-graphite) 50%, #000 100%);
 }
 
 .cinematic-act--breathe .cinematic-act__sticky {
@@ -493,46 +442,41 @@
   left: 0;
   width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.22), transparent);
   transform-origin: center;
-  transition: transform 1.2s var(--ease-cine);
+  transition: transform 1.4s var(--ease-cine);
+  pointer-events: none;
 }
 
 .cinematic-headline {
   font-family: var(--font-display);
-  font-size: clamp(4rem, 14vw, 13rem);
+  font-size: clamp(3.5rem, 11vw, 11rem);
   font-weight: 200;
   letter-spacing: -0.05em;
-  line-height: 0.9;
+  line-height: 0.92;
   text-align: center;
-  color: rgba(246, 247, 251, 0.9);
+  color: rgba(246, 247, 251, 0.88);
   transition: opacity 1s var(--ease-cine), transform 1s var(--ease-cine);
-  text-shadow: 0 0 40px rgba(125, 211, 252, 0.15);
-}
-
-.cinematic-headline--xl {
-  font-size: clamp(5rem, 16vw, 16rem);
+  will-change: opacity, transform;
 }
 
 .cinematic-headline--quiet {
-  color: rgba(246, 247, 251, 0.35);
+  color: rgba(246, 247, 251, 0.32);
   font-weight: 200;
 }
 
 .cinematic-headline--accent {
   font-style: italic;
   font-weight: 300;
-  background: linear-gradient(120deg, #7dd3fc 0%, #c4b5fd 60%, #f0abfc 100%);
+  background: linear-gradient(120deg, #d6e4ee 0%, #7dd3fc 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: none;
-  filter: drop-shadow(0 0 28px rgba(125, 211, 252, 0.35));
 }
 
-/* === ACT II: liquidity vision ======================================== */
+/* ── Act II: liquidity vision ── */
 .cinematic-act--vision {
-  background: radial-gradient(ellipse at center, #03060e 0%, #000 90%);
+  background: linear-gradient(180deg, #000, var(--c-graphite-2), #000);
 }
 
 .cinematic-vision-canvas {
@@ -540,49 +484,41 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 0;
+  pointer-events: none;
 }
 
 .cinematic-vision-label {
   position: absolute;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 14px;
-  font-size: 10px;
-  letter-spacing: 0.28em;
+  padding: 7px 14px;
+  font-size: 9px;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.65);
-  background: rgba(2, 4, 11, 0.55);
+  color: rgba(246, 247, 251, 0.62);
+  background: rgba(13, 17, 24, 0.6);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(125, 211, 252, 0.15);
+  border: 1px solid var(--c-edge);
   border-radius: 999px;
-  transition: opacity 0.7s var(--ease-cine), transform 0.7s var(--ease-cine);
   z-index: 2;
+  transition: opacity 0.7s var(--ease-cine), transform 0.7s var(--ease-cine);
+  pointer-events: none;
+  will-change: opacity, transform;
 }
 
-.cinematic-vision-label--top {
-  top: 28%;
-  right: 8%;
-}
-
-.cinematic-vision-label--bottom {
-  bottom: 28%;
-  left: 8%;
-}
+.cinematic-vision-label--top { top: 22%; right: 8%; }
+.cinematic-vision-label--bottom { bottom: 22%; left: 8%; }
 
 .cinematic-vision-label__dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--c-emerald);
-  box-shadow: 0 0 8px currentColor;
-  color: var(--c-emerald);
+  background: rgba(110, 231, 183, 0.85);
 }
 
 .cinematic-vision-label__dot--rose {
-  background: var(--c-rose);
-  color: var(--c-rose);
+  background: rgba(253, 164, 175, 0.85);
 }
 
 .cinematic-vision-text {
@@ -591,57 +527,57 @@
   text-align: center;
   max-width: 720px;
   padding: 0 24px;
-  transition: opacity 1s var(--ease-cine);
+  pointer-events: none;
 }
 
 .cinematic-vision-kicker {
-  font-family: ui-monospace, "SF Mono", monospace;
+  font-family: ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: 0.42em;
-  color: rgba(125, 211, 252, 0.7);
+  color: rgba(125, 211, 252, 0.6);
   text-transform: uppercase;
   margin-bottom: 24px;
 }
 
 .cinematic-vision-headline {
   font-family: var(--font-display);
-  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-size: clamp(2.2rem, 5.5vw, 4.4rem);
   font-weight: 200;
   letter-spacing: -0.035em;
   line-height: 1.04;
   color: var(--c-ink);
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   text-wrap: balance;
 }
 
 .cinematic-vision-headline em {
   font-style: italic;
   font-weight: 300;
-  background: linear-gradient(120deg, #7dd3fc 0%, #c4b5fd 100%);
+  background: linear-gradient(120deg, #d6e4ee 0%, #7dd3fc 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .cinematic-vision-body {
-  font-size: clamp(0.95rem, 1.15vw, 1.1rem);
+  font-size: clamp(0.92rem, 1.1vw, 1.05rem);
   line-height: 1.7;
-  color: rgba(246, 247, 251, 0.55);
+  color: rgba(246, 247, 251, 0.5);
   font-weight: 300;
   text-wrap: balance;
-  max-width: 540px;
+  max-width: 520px;
   margin: 0 auto;
 }
 
-/* === ACT III: orbit ================================================== */
+/* ── Act III: orbit ── */
 .cinematic-act--orbit {
-  background: radial-gradient(ellipse at center, #04070d 0%, #000 90%);
+  background: linear-gradient(180deg, #000, var(--c-graphite), #000);
 }
 
 .cinematic-orbit-stage {
   position: relative;
-  width: clamp(380px, 60vmin, 720px);
-  height: clamp(380px, 60vmin, 720px);
+  width: clamp(360px, 56vmin, 640px);
+  height: clamp(360px, 56vmin, 640px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -649,108 +585,77 @@
 
 .cinematic-orbit-ring {
   position: absolute;
-  inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(125, 211, 252, 0.18);
+  border: 1px solid rgba(125, 211, 252, 0.16);
   transition: opacity 1s var(--ease-cine), transform 1s var(--ease-cine);
+  pointer-events: none;
+  will-change: opacity, transform;
 }
 
 .cinematic-orbit-ring--1 { inset: 0; }
-.cinematic-orbit-ring--2 { inset: 16%; border-color: rgba(139, 92, 246, 0.18); }
-.cinematic-orbit-ring--3 { inset: 32%; border-color: rgba(192, 132, 252, 0.22); }
-
-.cinematic-orbit-ring::before,
-.cinematic-orbit-ring::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(125, 211, 252, 0.7) 30deg,
-    transparent 60deg,
-    transparent 360deg
-  );
-  mask: radial-gradient(circle, transparent calc(50% - 2px), black calc(50% - 1px), black 50%, transparent calc(50% + 1px));
-  -webkit-mask: radial-gradient(circle, transparent calc(50% - 2px), black calc(50% - 1px), black 50%, transparent calc(50% + 1px));
-  animation: cine-rotate 14s linear infinite;
-  filter: blur(0.5px);
-}
-
-.cinematic-orbit-ring--2::before { animation-duration: 22s; animation-direction: reverse; }
-.cinematic-orbit-ring--3::before { animation-duration: 16s; }
-
-@keyframes cine-rotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+.cinematic-orbit-ring--2 { inset: 14%; border-color: rgba(125, 211, 252, 0.12); }
+.cinematic-orbit-ring--3 { inset: 28%; border-color: rgba(125, 211, 252, 0.10); }
 
 .cinematic-orbit-spinner {
   position: absolute;
   inset: 0;
-  animation: cine-rotate 30s linear infinite;
-  transition: opacity 1s var(--ease-cine);
+  pointer-events: none;
+  animation: cine-orbit-spin 38s linear infinite;
+  transition: opacity 1.2s var(--ease-cine);
+  will-change: transform, opacity;
+}
+
+@keyframes cine-orbit-spin {
+  to { transform: rotate(360deg); }
 }
 
 .cinematic-orbit-node {
   position: absolute;
-  font-family: ui-monospace, "SF Mono", monospace;
-  font-size: 11px;
-  letter-spacing: 0.24em;
-  color: rgba(125, 211, 252, 0.85);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: rgba(125, 211, 252, 0.78);
   padding: 6px 12px;
-  border: 1px solid rgba(125, 211, 252, 0.3);
+  border: 1px solid var(--c-edge);
   border-radius: 999px;
-  background: rgba(2, 4, 11, 0.6);
+  background: rgba(6, 8, 13, 0.7);
   backdrop-filter: blur(8px);
-  box-shadow: 0 0 18px rgba(125, 211, 252, 0.25);
-  animation: cine-rotate 30s linear infinite reverse;
+  animation: cine-orbit-spin 38s linear infinite reverse;
 }
 
-.cinematic-orbit-node:nth-child(1) { top: -16px; left: 50%; transform: translateX(-50%); }
-.cinematic-orbit-node:nth-child(2) { top: 50%; right: -32px; transform: translateY(-50%); }
-.cinematic-orbit-node:nth-child(3) { bottom: -16px; left: 50%; transform: translateX(-50%); }
+.cinematic-orbit-node:nth-child(1) { top: -14px; left: 50%; transform: translateX(-50%); }
+.cinematic-orbit-node:nth-child(2) { top: 50%; right: -28px; transform: translateY(-50%); }
+.cinematic-orbit-node:nth-child(3) { bottom: -14px; left: 50%; transform: translateX(-50%); }
 
 .cinematic-orbit-core {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 30%;
-  height: 30%;
+  width: 28%;
+  height: 28%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, rgba(125, 211, 252, 0.28), rgba(2, 4, 11, 0.95) 70%);
-  border: 1px solid rgba(125, 211, 252, 0.35);
-  box-shadow:
-    0 0 40px rgba(125, 211, 252, 0.4),
-    inset 0 0 32px rgba(56, 189, 248, 0.18);
-  transition: opacity 1s var(--ease-cine), transform 1s var(--ease-cine);
-}
-
-.cinematic-orbit-core::before {
-  content: "";
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  border: 1px dashed rgba(125, 211, 252, 0.4);
-  animation: cine-rotate 10s linear infinite;
+  background: radial-gradient(circle at 35% 30%, rgba(125, 211, 252, 0.18), rgba(6, 8, 13, 0.95) 70%);
+  border: 1px solid var(--c-edge-strong);
+  transition: opacity 1.2s var(--ease-cine), transform 1.2s var(--ease-cine);
+  pointer-events: none;
+  will-change: opacity, transform;
 }
 
 .cinematic-orbit-core__label {
   font-family: ui-monospace, monospace;
   font-size: 9px;
-  letter-spacing: 0.36em;
-  color: rgba(125, 211, 252, 0.85);
+  letter-spacing: 0.32em;
+  color: rgba(125, 211, 252, 0.7);
   text-transform: uppercase;
 }
 
 .cinematic-orbit-core__value {
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  font-size: clamp(1.4rem, 2.8vw, 2.2rem);
   font-weight: 200;
   color: var(--c-ink);
   font-feature-settings: "tnum";
@@ -762,20 +667,22 @@
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
-  max-width: 600px;
+  max-width: 560px;
   padding: 0 24px;
   z-index: 2;
+  transition: opacity 1s var(--ease-cine);
+  pointer-events: none;
 }
 
-/* === ACT IV: risk engine — cinematic numbers ========================= */
+/* ── Act IV: numbers ── */
 .cinematic-act--risk {
-  background: radial-gradient(ellipse at 50% 30%, #060a14 0%, #000 80%);
+  background: linear-gradient(180deg, #000, var(--c-graphite-2), #000);
 }
 
 .cinematic-risk-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8vh;
+  gap: 6vh;
   width: min(1100px, 90vw);
   align-items: center;
 }
@@ -789,6 +696,7 @@
 
 .cinematic-risk-text {
   text-align: left;
+  transition: opacity 0.9s var(--ease-cine);
 }
 
 .cinematic-risk-numbers {
@@ -803,9 +711,10 @@
   grid-template-rows: auto auto;
   column-gap: 24px;
   align-items: baseline;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--c-edge);
   transition: opacity 0.8s var(--ease-cine), transform 0.8s var(--ease-cine);
+  will-change: opacity, transform;
 }
 
 .cinematic-number__label {
@@ -815,7 +724,7 @@
   font-size: 10px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.4);
+  color: rgba(246, 247, 251, 0.36);
   align-self: center;
   white-space: nowrap;
 }
@@ -824,7 +733,7 @@
   grid-column: 2;
   grid-row: 1;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-size: clamp(2.6rem, 6vw, 4.8rem);
   font-weight: 200;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -835,111 +744,71 @@
 .cinematic-number__suffix {
   grid-column: 2;
   grid-row: 2;
-  font-size: 11px;
-  letter-spacing: 0.24em;
+  font-size: 10px;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.45);
+  color: rgba(246, 247, 251, 0.4);
   margin-top: 6px;
 }
 
-.cinematic-number--amber .cinematic-number__value {
-  background: linear-gradient(120deg, #fcd34d 0%, #fb923c 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 .cinematic-number--cyan .cinematic-number__value {
-  background: linear-gradient(120deg, #7dd3fc 0%, #c4b5fd 100%);
+  background: linear-gradient(120deg, #d6e4ee 0%, #7dd3fc 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* === ACT V: invitation =============================================== */
+.cinematic-number--graphite .cinematic-number__value {
+  color: rgba(246, 247, 251, 0.62);
+}
+
+/* ── Act V: invitation ── */
 .cinematic-act--invitation {
-  background: radial-gradient(ellipse at center bottom, #03060e 0%, #000 80%);
+  background: radial-gradient(ellipse at 50% 70%, var(--c-graphite-2) 0%, #000 70%);
 }
 
 .cinematic-invite {
   text-align: center;
-  max-width: 800px;
+  max-width: 760px;
   padding: 0 24px;
 }
 
-.cinematic-invite-eyebrow {
+.cinematic-invite__eyebrow {
   font-family: ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.42em;
-  color: rgba(125, 211, 252, 0.75);
+  color: rgba(125, 211, 252, 0.7);
   text-transform: uppercase;
-  margin-bottom: 32px;
-  transition: opacity 1s var(--ease-cine);
+  margin-bottom: 28px;
 }
 
-.cinematic-invite-title {
+.cinematic-invite__title {
   font-family: var(--font-display);
-  font-size: clamp(3rem, 8vw, 7rem);
+  font-size: clamp(2.6rem, 7vw, 6rem);
   font-weight: 200;
   letter-spacing: -0.04em;
-  line-height: 1;
+  line-height: 1.02;
   color: var(--c-ink);
-  margin-bottom: 24px;
-  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.6) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  transition: opacity 1s var(--ease-cine), transform 1s var(--ease-cine);
+  margin-bottom: 22px;
 }
 
-.cinematic-invite-sub {
-  font-size: clamp(1rem, 1.4vw, 1.25rem);
-  color: rgba(246, 247, 251, 0.55);
+.cinematic-invite__sub {
+  font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  color: rgba(246, 247, 251, 0.5);
   font-weight: 300;
-  margin-bottom: 56px;
-  letter-spacing: 0.005em;
-  transition: opacity 1s var(--ease-cine);
+  margin-bottom: 48px;
 }
 
-.cinematic-invite-actions {
+.cinematic-invite__actions {
   display: flex;
-  gap: 32px;
+  gap: 28px;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  transition: opacity 1s var(--ease-cine);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════════════════════════ */
-@media (max-width: 720px) {
-  .cinematic-vision-label--top { top: 18%; right: 4%; font-size: 9px; }
-  .cinematic-vision-label--bottom { bottom: 18%; left: 4%; font-size: 9px; }
-  .cinematic-readout { padding-left: 0; align-items: center; }
-  .cinematic-orbit-text { bottom: 6%; }
-  .cinematic-risk-grid { gap: 6vh; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cinematic-film::before,
-  .cinematic-nebula,
-  .cinematic-scanner,
-  .cinematic-mark-dot,
-  .cinematic-readout-pulse,
-  .cinematic-signal-lock::before,
-  .cinematic-orbit-ring::before,
-  .cinematic-orbit-spinner,
-  .cinematic-orbit-node,
-  .cinematic-orbit-core::before,
-  .cinematic-scroll-line {
-    animation: none !important;
-  }
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════
-   PRELOADER — film studio opening
+   PRELOADER
    ═══════════════════════════════════════════════════════════════════ */
 .cinematic-preloader {
   position: fixed;
@@ -949,69 +818,50 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: 22px;
   background: #000;
   pointer-events: none;
-  transition: opacity 0.6s var(--ease-cine, cubic-bezier(0.22, 0.61, 0.36, 1));
+  transition: opacity 0.6s var(--ease-cine);
+  will-change: opacity;
 }
 
-.cinematic-preloader[data-phase="in"] { opacity: 1; }
+.cinematic-preloader[data-phase="in"],
 .cinematic-preloader[data-phase="hold"] { opacity: 1; }
 .cinematic-preloader[data-phase="out"] { opacity: 0; }
-
-.cinematic-preloader::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.96 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  mix-blend-mode: overlay;
-  opacity: 0.5;
-}
 
 .cinematic-preloader__mark {
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  font-family: var(--font-display);
 }
 
 .cinematic-preloader__dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #7dd3fc;
-  box-shadow: 0 0 24px #38bdf8, 0 0 60px rgba(56, 189, 248, 0.6);
-  animation: cine-preloader-pulse 1.2s ease-in-out infinite;
+  background: var(--c-cyan);
+  box-shadow: 0 0 16px rgba(125, 211, 252, 0.7);
+  animation: cine-preloader-dot 1.6s ease-in-out infinite;
 }
 
-@keyframes cine-preloader-pulse {
+@keyframes cine-preloader-dot {
   0%, 100% { transform: scale(0.85); opacity: 0.7; }
-  50% { transform: scale(1.2); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 1; }
 }
 
 .cinematic-preloader__name {
-  font-size: clamp(1rem, 1.6vw, 1.4rem);
-  font-weight: 200;
+  font-family: var(--font-display);
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+  font-weight: 300;
   letter-spacing: 0.5em;
-  color: rgba(246, 247, 251, 0.92);
+  color: rgba(246, 247, 251, 0.88);
   padding-left: 0.5em;
-  background: linear-gradient(120deg, #ffffff 0%, rgba(125, 211, 252, 0.7) 50%, #ffffff 100%);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: cine-preloader-shine 2.4s linear infinite;
-}
-
-@keyframes cine-preloader-shine {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
 }
 
 .cinematic-preloader__line {
-  width: 240px;
+  width: 220px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.4), transparent);
   position: relative;
   overflow: hidden;
 }
@@ -1023,9 +873,8 @@
   left: -30%;
   width: 30%;
   height: 100%;
-  background: rgba(125, 211, 252, 1);
-  box-shadow: 0 0 14px #38bdf8;
-  animation: cine-preloader-scan 1.4s var(--ease-cine, cubic-bezier(0.22, 0.61, 0.36, 1)) infinite;
+  background: rgba(125, 211, 252, 0.85);
+  animation: cine-preloader-scan 1.6s var(--ease-cine) infinite;
 }
 
 @keyframes cine-preloader-scan {
@@ -1034,73 +883,102 @@
 }
 
 .cinematic-preloader__caption {
-  font-family: ui-monospace, "SF Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.32em;
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.36em;
   text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.35);
+  color: rgba(246, 247, 251, 0.32);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SCENE BREAK — cinematic divider between acts
+   SCENE BREAK
    ═══════════════════════════════════════════════════════════════════ */
 .cinematic-scene-break {
   position: relative;
-  height: 60vh;
+  height: 40vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, transparent 0%, #000 50%, transparent 100%);
-  overflow: hidden;
+  background: #000;
+  pointer-events: none;
 }
 
-.cinematic-scene-break::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
+.cinematic-scene-break__line {
   width: 1px;
-  height: 30vh;
-  background: linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.5), transparent);
-  transform: translate(-50%, -50%);
+  height: 24vh;
+  background: linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.25), transparent);
 }
 
 .cinematic-scene-break__quote {
-  font-family: var(--font-display);
-  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.45);
-  font-weight: 300;
-  text-align: center;
-  position: relative;
-  padding: 0 60px;
-  white-space: nowrap;
-}
-
-.cinematic-scene-break__quote::before,
-.cinematic-scene-break__quote::after {
-  content: "";
   position: absolute;
-  top: 50%;
-  width: 40px;
-  height: 1px;
-  background: rgba(125, 211, 252, 0.35);
-}
-.cinematic-scene-break__quote::before { right: calc(100% - 40px); transform: translateY(-50%); }
-.cinematic-scene-break__quote::after { left: calc(100% - 40px); transform: translateY(-50%); }
-
-@media (max-width: 600px) {
-  .cinematic-scene-break__quote {
-    white-space: normal;
-    padding: 0 40px;
-    font-size: 0.85rem;
-  }
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.32);
 }
 
+@media (max-width: 720px) {
+  .cinematic-scene-break { height: 28vh; }
+  .cinematic-scene-break__line { height: 16vh; }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
-   GLOBAL OVERRIDES — when on the cinematic page, body should be true black
+   PHASE HUD — bottom-left, very calm, no red dot
+   ═══════════════════════════════════════════════════════════════════ */
+.cinematic-phase-hud {
+  position: fixed;
+  bottom: 22px;
+  left: 22px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--c-edge);
+  border-radius: 999px;
+  background: rgba(6, 8, 13, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s var(--ease-cine);
+}
+
+.cinematic-phase-hud.is-in {
+  opacity: 1;
+}
+
+.cinematic-phase-hud__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--c-cyan);
+  box-shadow: 0 0 6px rgba(125, 211, 252, 0.6);
+}
+
+.cinematic-phase-hud__sep {
+  width: 1px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cinematic-phase-hud__label {
+  color: rgba(125, 211, 252, 0.85);
+  transition: color 0.4s var(--ease-cine);
+}
+
+@media (max-width: 720px) {
+  .cinematic-phase-hud { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL OVERRIDES — only when on the cinematic page
    ═══════════════════════════════════════════════════════════════════ */
 body:has(.cinematic-film) {
   background: #000 !important;
@@ -1112,19 +990,17 @@ body:has(.cinematic-film)::after {
   display: none !important;
 }
 
-/* keep the navbar but make its background blend on the cinematic page */
 body:has(.cinematic-film) .vx-navbar {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 80%, transparent 100%) !important;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.35) 80%, transparent 100%) !important;
   border-color: transparent !important;
   backdrop-filter: blur(8px);
+  z-index: 40;
 }
 
-/* hide the existing ambient blobs — we use our own cinematic atmosphere */
 body:has(.cinematic-film) .vx-mouse-glow {
   display: none !important;
 }
 
-/* the sidebar also fights with the cinematic frame on /, kill it on landing */
 body:has(.cinematic-film) .vx-app-main--landing > aside,
 body:has(.cinematic-film) .vx-app-main--landing > nav.vx-sidebar {
   display: none !important;
@@ -1135,269 +1011,25 @@ body:has(.cinematic-film) .vx-app-main--landing {
   gap: 0 !important;
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════
-   POST-FX OVERLAY — chromatic aberration, bloom, lens breathing
+   REDUCED MOTION
    ═══════════════════════════════════════════════════════════════════ */
-.cine-postfx {
-  /* the layer itself is transparent; its children carry the effects */
-}
-
-.cine-postfx__breathe {
-  transform: scale(var(--breathe, 1));
-  transform-origin: center;
-  transition: transform 0.05s linear;
-  will-change: transform;
-}
-
-/* Chromatic aberration — RGB split visible on edges during fast scroll */
-.cine-postfx__aberration {
-  --ab-x: 0px;
-  background:
-    radial-gradient(ellipse 100% 100% at 50% 50%, transparent 50%, rgba(255, 0, 80, 0.05) 100%),
-    radial-gradient(ellipse 100% 100% at 50% 50%, transparent 50%, rgba(0, 200, 255, 0.05) 100%);
-  background-size:
-    calc(100% + var(--ab-x)) 100%,
-    calc(100% - var(--ab-x)) 100%;
-  background-position: left center, right center;
-  background-repeat: no-repeat;
-  mix-blend-mode: screen;
-  opacity: 0;
-  transition: opacity 0.2s linear;
-}
-
-/* Soft bloom — adds halo around bright areas */
-.cine-postfx__bloom {
-  background:
-    radial-gradient(ellipse 60% 50% at 50% 35%, rgba(125, 211, 252, 0.04), transparent 70%),
-    radial-gradient(ellipse 80% 60% at 50% 80%, rgba(139, 92, 246, 0.03), transparent 70%);
-  mix-blend-mode: screen;
-}
-
-/* Scanlines — extremely faint horizontal CRT lines */
-.cine-postfx__scanlines {
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0,
-    transparent 2px,
-    rgba(255, 255, 255, 0.012) 2px,
-    rgba(255, 255, 255, 0.012) 3px
-  );
-  mix-blend-mode: overlay;
-  opacity: 0.7;
-  animation: cine-scan-shift 7s linear infinite;
-}
-
-@keyframes cine-scan-shift {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 3px; }
-}
-
-/* Vignette — focus pull during fast scroll (intensifies via JS in future) */
-.cine-postfx__vignette {
-  background: radial-gradient(
-    ellipse 110% 90% at 50% 50%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.35) 90%,
-    rgba(0, 0, 0, 0.6) 100%
-  );
-}
-
-/* Atmospheric haze — subtle volumetric fog drifting */
-.cine-postfx__haze {
-  background:
-    radial-gradient(ellipse 60% 30% at 30% 70%, rgba(125, 211, 252, 0.025), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 75% 30%, rgba(139, 92, 246, 0.02), transparent 70%);
-  filter: blur(40px);
-  animation: cine-haze-drift 30s ease-in-out infinite;
-  mix-blend-mode: screen;
-}
-
-@keyframes cine-haze-drift {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(-1.5%, 0.8%); }
-  66% { transform: translate(1.2%, -0.6%); }
-}
-
-/* Rare signal distortion — flickers on every ~12s */
-.cine-postfx__distort {
-  background: linear-gradient(
-    180deg,
-    transparent 49.7%,
-    rgba(125, 211, 252, 0.18) 49.9%,
-    rgba(125, 211, 252, 0.2) 50%,
-    rgba(125, 211, 252, 0.18) 50.1%,
-    transparent 50.3%
-  );
-  background-size: 100% 100%;
-  opacity: 0;
-  animation: cine-glitch 18s linear infinite;
-  mix-blend-mode: screen;
-}
-
-@keyframes cine-glitch {
-  0%, 95%, 100% { opacity: 0; transform: translateY(0); }
-  95.5% { opacity: 0.9; transform: translateY(20%); }
-  96% { opacity: 0.4; transform: translateY(-15%); }
-  96.5% { opacity: 0.7; transform: translateY(40%); }
-  97% { opacity: 0; transform: translateY(0); }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   AMBIENCE CANVAS — ensure it sits behind everything but body
-   ═══════════════════════════════════════════════════════════════════ */
-.cine-ambience {
-  z-index: 1;
-}
-
-body:has(.cinematic-film) {
-  position: relative;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   SMOOTH-SCROLL DRIVEN PARALLAX HELPERS
-   ═══════════════════════════════════════════════════════════════════ */
-.cine-parallax-bg {
-  /* used inside acts: translates slower than scroll */
-  transform: translate3d(0, calc((var(--cine-y, 0px) - var(--cine-anchor, 0px)) * -0.06), 0);
-  will-change: transform;
-}
-
-.cine-parallax-mid {
-  transform: translate3d(0, calc((var(--cine-y, 0px) - var(--cine-anchor, 0px)) * -0.12), 0);
-  will-change: transform;
-}
-
-.cine-parallax-fg {
-  transform: translate3d(0, calc((var(--cine-y, 0px) - var(--cine-anchor, 0px)) * -0.22), 0);
-  will-change: transform;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   PHASE-AWARE TYPOGRAPHY (for 5-phase opening)
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* phase eyebrows above the title */
-.cinematic-phase-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  font-family: ui-monospace, "SF Mono", "Geist Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  color: rgba(125, 211, 252, 0.7);
-  text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-}
-
-.cinematic-phase-eyebrow__bar {
-  display: inline-block;
-  width: 36px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.8));
-}
-
-/* mask reveal — text wipes in from below */
-.cinematic-mask-reveal {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: bottom;
-}
-
-.cinematic-mask-reveal > span {
-  display: inline-block;
-  transform: translateY(110%);
-  animation: cine-mask-up 1.4s var(--ease-glide, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
-}
-
-@keyframes cine-mask-up {
-  to { transform: translateY(0); }
-}
-
-/* split-letter reveal — for film-title moments */
-.cinematic-split-letter {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(30%);
-  animation: cine-split-letter 0.9s var(--ease-glide, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
-}
-
-@keyframes cine-split-letter {
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-preloader__dot,
+  .cinematic-preloader__line::after,
+  .cinematic-orbit-spinner,
+  .cinematic-orbit-node,
+  .cinematic-scroll-hint__line {
+    animation: none !important;
   }
-}
 
-/* ═══════════════════════════════════════════════════════════════════
-   PHASE INDICATOR — tiny corner HUD that shows current phase
-   ═══════════════════════════════════════════════════════════════════ */
-.cinematic-phase-hud {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 16px;
-  border: 1px solid rgba(125, 211, 252, 0.18);
-  border-radius: 999px;
-  background: rgba(2, 4, 11, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  font-family: ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: rgba(246, 247, 251, 0.7);
-  pointer-events: none;
-  transition: opacity 0.6s var(--ease-cine, cubic-bezier(0.22, 0.61, 0.36, 1));
-}
+  .cinematic-canvas,
+  .cinematic-ambient {
+    transform: none !important;
+  }
 
-.cinematic-phase-hud__rec {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cinematic-phase-hud__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #f43f5e;
-  box-shadow: 0 0 8px #f43f5e;
-  animation: cine-rec-blink 1.4s ease-in-out infinite;
-}
-
-@keyframes cine-rec-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-.cinematic-phase-hud__label {
-  color: rgba(125, 211, 252, 0.85);
-}
-
-.cinematic-phase-hud__sep {
-  width: 1px;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* hidden on small screens */
-@media (max-width: 720px) {
-  .cinematic-phase-hud { display: none; }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   IDLE BREATHING for orbs — when no scroll/mouse, still alive
-   ═══════════════════════════════════════════════════════════════════ */
-.cinematic-orb-soft {
-  animation: cine-orb-idle 11s ease-in-out infinite;
-}
-
-@keyframes cine-orb-idle {
-  0%, 100% { filter: blur(50px); }
-  50% { filter: blur(60px); }
+  .cine-fade-up,
+  .cinematic-readout__line {
+    transition-duration: 0.2s !important;
+  }
 }

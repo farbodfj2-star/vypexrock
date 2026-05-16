@@ -1,91 +1,64 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 
-import { cn } from "@/lib/utils";
+/**
+ * Cinematic Acts v2 — no per-scroll React re-renders.
+ *
+ * Each act:
+ *   • observes its sticky container with IntersectionObserver
+ *   • toggles `.is-in` once when crossing 25% threshold
+ *   • CSS transitions handle the reveal — smooth, predictable
+ *   • canvases run a single rAF loop with deterministic data
+ */
 
-// ─────────────────────────────────────────────────────────────────
-// Hooks
-// ─────────────────────────────────────────────────────────────────
-function useScrollProgress<T extends HTMLElement>() {
+function useReveal<T extends HTMLElement>() {
   const ref = useRef<T>(null);
-  const [progress, setProgress] = useState(0);
-
   useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      if (!ref.current) return;
-      const rect = ref.current.getBoundingClientRect();
-      const total = rect.height + window.innerHeight;
-      const scrolled = window.innerHeight - rect.top;
-      const p = Math.max(0, Math.min(1, scrolled / total));
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => setProgress(p));
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
+    const el = ref.current;
+    if (!el) return;
+    const targets = el.querySelectorAll<HTMLElement>(".cine-fade-up, .cinematic-headline, .cinematic-vision-text, .cinematic-vision-label, .cinematic-orbit-stage, .cinematic-orbit-text, .cinematic-risk-text, .cinematic-number, .cinematic-invite, .cinematic-act__bg-line");
+    if (!targets.length) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).classList.add("is-in");
+          }
+        });
+      },
+      { threshold: 0.25, rootMargin: "0px 0px -10% 0px" },
+    );
+    targets.forEach((t) => io.observe(t));
+    return () => io.disconnect();
   }, []);
-
-  return [ref, progress] as const;
-}
-
-function smoothstep(a: number, b: number, x: number) {
-  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
-  return t * t * (3 - 2 * t);
+  return ref;
 }
 
 // ─────────────────────────────────────────────────────────────────
-// ACT I — "Silence becomes signal" (typography breathes)
+// ACT I — Silence becomes signal
 // ─────────────────────────────────────────────────────────────────
 export function ActSilenceBecomesSignal() {
-  const [ref, p] = useScrollProgress<HTMLElement>();
-
-  const op1 = smoothstep(0.05, 0.25, p);
-  const op2 = smoothstep(0.2, 0.45, p);
-  const op3 = smoothstep(0.4, 0.65, p);
-  const opLine = smoothstep(0.55, 0.75, p);
-
+  const ref = useReveal<HTMLElement>();
   return (
     <section ref={ref} className="cinematic-act cinematic-act--breathe">
       <div className="cinematic-act__sticky">
-        <div className="cinematic-act__bg-line" style={{ transform: `scaleX(${opLine})` }} />
-        <p
-          className="cinematic-headline cinematic-headline--xl"
-          style={{ opacity: op1, transform: `translateY(${(1 - op1) * 20}px)` }}
-        >
-          Silence
-        </p>
-        <p
-          className="cinematic-headline cinematic-headline--xl cinematic-headline--quiet"
-          style={{ opacity: op2, transform: `translateY(${(1 - op2) * 20}px)` }}
-        >
-          becomes
-        </p>
-        <p
-          className="cinematic-headline cinematic-headline--xl cinematic-headline--accent"
-          style={{ opacity: op3, transform: `translateY(${(1 - op3) * 20}px)` }}
-        >
-          signal.
-        </p>
+        <div className="cinematic-act__bg-line" style={{ transitionDuration: "1.6s" }} />
+        <p className="cinematic-headline cine-fade-up" style={{ transitionDelay: "0s" }}>Silence</p>
+        <p className="cinematic-headline cinematic-headline--quiet cine-fade-up" style={{ transitionDelay: "0.25s" }}>becomes</p>
+        <p className="cinematic-headline cinematic-headline--accent cine-fade-up" style={{ transitionDelay: "0.5s" }}>signal.</p>
       </div>
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────
-// ACT II — Holographic chart in deep space (no card, full bleed)
+// ACT II — Liquidity vision
 // ─────────────────────────────────────────────────────────────────
 export function ActLiquidityVision() {
-  const [ref, p] = useScrollProgress<HTMLElement>();
+  const ref = useReveal<HTMLElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const reveal = smoothstep(0.1, 0.55, p);
-  const labelOp = smoothstep(0.35, 0.6, p);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -94,49 +67,50 @@ export function ActLiquidityVision() {
     if (!ctx) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+    let w = 0, h = 0;
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      w = rect.width;
+      h = rect.height;
+      canvas.width = Math.max(1, Math.floor(w * dpr));
+      canvas.height = Math.max(1, Math.floor(h * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
 
-    const w = rect.width;
-    const h = rect.height;
     let frame = 0;
-    let raf = 0;
-    let stop = false;
-
-    // generate flowing liquidity surface
-    const points = 80;
+    let stopped = false;
 
     const tick = () => {
-      if (stop) return;
+      if (stopped) return;
       frame++;
       ctx.clearRect(0, 0, w, h);
 
       // soft horizon
-      const grad = ctx.createRadialGradient(w / 2, h * 0.55, 10, w / 2, h * 0.55, w * 0.6);
-      grad.addColorStop(0, `rgba(56, 189, 248, ${0.08 * reveal})`);
+      const grad = ctx.createRadialGradient(w / 2, h * 0.55, 10, w / 2, h * 0.55, w * 0.5);
+      grad.addColorStop(0, "rgba(125, 211, 252, 0.05)");
       grad.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
 
-      // flowing liquidity ribbons (like ocean swells)
-      for (let layer = 0; layer < 5; layer++) {
-        const y0 = h * (0.35 + layer * 0.07);
+      // flowing liquidity ribbons
+      for (let layer = 0; layer < 4; layer++) {
+        const y0 = h * (0.38 + layer * 0.06);
         ctx.save();
-        ctx.globalAlpha = (0.6 - layer * 0.1) * reveal;
-        ctx.strokeStyle = `rgba(125, 211, 252, ${0.5 - layer * 0.08})`;
-        ctx.lineWidth = 1.2 - layer * 0.15;
-        ctx.shadowColor = "rgba(56, 189, 248, 0.6)";
-        ctx.shadowBlur = 12;
-
+        ctx.globalAlpha = 0.42 - layer * 0.08;
+        ctx.strokeStyle = `rgba(125, 211, 252, ${0.45 - layer * 0.08})`;
+        ctx.lineWidth = 1.1 - layer * 0.15;
+        ctx.shadowColor = "rgba(56, 189, 248, 0.45)";
+        ctx.shadowBlur = 8;
         ctx.beginPath();
+        const points = 80;
         for (let i = 0; i <= points; i++) {
           const t = i / points;
           const x = t * w;
-          const wave =
-            Math.sin(t * Math.PI * 4 + frame * 0.012 + layer) * 18 +
-            Math.sin(t * Math.PI * 7 + frame * 0.018 + layer * 1.7) * 9;
+          const wave = Math.sin(t * Math.PI * 4 + frame * 0.01 + layer) * 16
+            + Math.sin(t * Math.PI * 7 + frame * 0.014 + layer * 1.7) * 8;
           const y = y0 + wave;
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
@@ -145,75 +119,50 @@ export function ActLiquidityVision() {
         ctx.restore();
       }
 
-      // institutional level pulses
+      // institutional levels
       const levels = [
-        { yp: 0.28, color: "52, 211, 153", tag: "sell-side" },
-        { yp: 0.7, color: "244, 63, 94", tag: "buy-side" },
+        { yp: 0.3, color: "110, 231, 183" },
+        { yp: 0.7, color: "253, 164, 175" },
       ];
       levels.forEach((lv) => {
-        const y = h * lv.yp;
-        const pulse = (Math.sin(frame * 0.04) + 1) / 2;
         ctx.save();
-        ctx.globalAlpha = (0.45 + pulse * 0.3) * reveal;
-        ctx.strokeStyle = `rgba(${lv.color}, 0.7)`;
+        ctx.globalAlpha = 0.45;
+        ctx.strokeStyle = `rgba(${lv.color}, 0.65)`;
         ctx.lineWidth = 0.6;
         ctx.setLineDash([2, 8]);
         ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
+        ctx.moveTo(0, h * lv.yp);
+        ctx.lineTo(w, h * lv.yp);
         ctx.stroke();
         ctx.restore();
       });
 
-      // floating particles — implies machine humming
-      ctx.save();
-      for (let i = 0; i < 28; i++) {
-        const seed = i * 53.7;
-        const x = (seed * 17 + frame * 0.4) % w;
-        const y = h * 0.5 + Math.sin(frame * 0.005 + i * 0.7) * h * 0.25;
-        const size = 0.6 + Math.sin(frame * 0.02 + i) * 0.5;
-        const op = ((Math.sin(frame * 0.012 + i * 1.4) + 1) / 2) * 0.5 * reveal;
-        ctx.fillStyle = `rgba(186, 230, 253, ${op})`;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+
+    let raf = requestAnimationFrame(tick);
     return () => {
-      stop = true;
+      stopped = true;
       cancelAnimationFrame(raf);
+      ro.disconnect();
     };
-  }, [reveal]);
+  }, []);
 
   return (
     <section ref={ref} className="cinematic-act cinematic-act--vision">
       <div className="cinematic-act__sticky">
         <canvas ref={canvasRef} className="cinematic-vision-canvas" />
 
-        <div
-          className="cinematic-vision-label cinematic-vision-label--top"
-          style={{ opacity: labelOp, transform: `translateY(${(1 - labelOp) * -8}px)` }}
-        >
+        <div className="cinematic-vision-label cinematic-vision-label--top cine-fade-up">
           <span className="cinematic-vision-label__dot" />
           sell-side liquidity
         </div>
-
-        <div
-          className="cinematic-vision-label cinematic-vision-label--bottom"
-          style={{ opacity: labelOp, transform: `translateY(${(1 - labelOp) * 8}px)` }}
-        >
+        <div className="cinematic-vision-label cinematic-vision-label--bottom cine-fade-up" style={{ transitionDelay: "0.15s" }}>
           <span className="cinematic-vision-label__dot cinematic-vision-label__dot--rose" />
           buy-side liquidity
         </div>
 
-        <div
-          className="cinematic-vision-text"
-          style={{ opacity: smoothstep(0.45, 0.7, p) }}
-        >
+        <div className="cinematic-vision-text cine-fade-up" style={{ transitionDelay: "0.3s" }}>
           <p className="cinematic-vision-kicker">CHAPTER 01</p>
           <h2 className="cinematic-vision-headline">
             Where others see candles,
@@ -230,55 +179,29 @@ export function ActLiquidityVision() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// ACT III — Multi-timeframe orbit (clean geometry, breathing)
+// ACT III — Multi-timeframe orbit
 // ─────────────────────────────────────────────────────────────────
 export function ActOrbit() {
-  const [ref, p] = useScrollProgress<HTMLElement>();
-  const reveal = smoothstep(0.1, 0.6, p);
-  const lock = smoothstep(0.55, 0.85, p);
-
+  const ref = useReveal<HTMLElement>();
   return (
     <section ref={ref} className="cinematic-act cinematic-act--orbit">
       <div className="cinematic-act__sticky">
-        <div className="cinematic-orbit-stage">
-          {/* concentric rings */}
-          <div
-            className="cinematic-orbit-ring cinematic-orbit-ring--1"
-            style={{ opacity: reveal, transform: `scale(${0.85 + reveal * 0.15})` }}
-          />
-          <div
-            className="cinematic-orbit-ring cinematic-orbit-ring--2"
-            style={{ opacity: reveal * 0.85, transform: `scale(${0.85 + reveal * 0.15})` }}
-          />
-          <div
-            className="cinematic-orbit-ring cinematic-orbit-ring--3"
-            style={{ opacity: reveal * 0.7, transform: `scale(${0.85 + reveal * 0.15})` }}
-          />
-
-          {/* orbiting nodes */}
-          <div className="cinematic-orbit-spinner" style={{ opacity: reveal }}>
+        <div className="cinematic-orbit-stage cine-fade-up">
+          <div className="cinematic-orbit-ring cinematic-orbit-ring--1" />
+          <div className="cinematic-orbit-ring cinematic-orbit-ring--2" />
+          <div className="cinematic-orbit-ring cinematic-orbit-ring--3" />
+          <div className="cinematic-orbit-spinner">
             <span className="cinematic-orbit-node">15m</span>
             <span className="cinematic-orbit-node">1H</span>
             <span className="cinematic-orbit-node">4H</span>
           </div>
-
-          {/* center lock */}
-          <div
-            className="cinematic-orbit-core"
-            style={{
-              opacity: lock,
-              transform: `translate(-50%, -50%) scale(${0.7 + lock * 0.3})`,
-            }}
-          >
+          <div className="cinematic-orbit-core" style={{ transform: "translate(-50%, -50%)" }}>
             <span className="cinematic-orbit-core__label">aligned</span>
             <span className="cinematic-orbit-core__value">88%</span>
           </div>
         </div>
 
-        <div
-          className="cinematic-orbit-text"
-          style={{ opacity: smoothstep(0.2, 0.55, p) }}
-        >
+        <div className="cinematic-orbit-text cine-fade-up" style={{ transitionDelay: "0.2s" }}>
           <p className="cinematic-vision-kicker">CHAPTER 02</p>
           <h2 className="cinematic-vision-headline">
             Three timeframes.
@@ -295,20 +218,15 @@ export function ActOrbit() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// ACT IV — Risk engine (text + cinematic numbers, no cards)
+// ACT IV — Risk engine
 // ─────────────────────────────────────────────────────────────────
 export function ActRisk() {
-  const [ref, p] = useScrollProgress<HTMLElement>();
-  const reveal = smoothstep(0.15, 0.55, p);
-
+  const ref = useReveal<HTMLElement>();
   return (
     <section ref={ref} className="cinematic-act cinematic-act--risk">
       <div className="cinematic-act__sticky">
         <div className="cinematic-risk-grid">
-          <div
-            className="cinematic-risk-text"
-            style={{ opacity: smoothstep(0.05, 0.4, p) }}
-          >
+          <div className="cinematic-risk-text cine-fade-up">
             <p className="cinematic-vision-kicker">CHAPTER 03</p>
             <h2 className="cinematic-vision-headline">
               Discipline,
@@ -322,9 +240,21 @@ export function ActRisk() {
           </div>
 
           <div className="cinematic-risk-numbers">
-            <CinematicNumber label="position" value="2.5%" suffix="per trade" reveal={reveal} delay={0} />
-            <CinematicNumber label="heat" value="8.2%" suffix="active" reveal={reveal} delay={0.15} accent="amber" />
-            <CinematicNumber label="r:r" value="1:3.2" suffix="median" reveal={reveal} delay={0.3} accent="cyan" />
+            <div className="cinematic-number cine-fade-up" style={{ transitionDelay: "0.15s" }}>
+              <span className="cinematic-number__label">position</span>
+              <span className="cinematic-number__value">2.5%</span>
+              <span className="cinematic-number__suffix">per trade</span>
+            </div>
+            <div className="cinematic-number cinematic-number--graphite cine-fade-up" style={{ transitionDelay: "0.3s" }}>
+              <span className="cinematic-number__label">heat</span>
+              <span className="cinematic-number__value">8.2%</span>
+              <span className="cinematic-number__suffix">active</span>
+            </div>
+            <div className="cinematic-number cinematic-number--cyan cine-fade-up" style={{ transitionDelay: "0.45s" }}>
+              <span className="cinematic-number__label">r:r</span>
+              <span className="cinematic-number__value">1:3.2</span>
+              <span className="cinematic-number__suffix">median</span>
+            </div>
           </div>
         </div>
       </div>
@@ -332,75 +262,22 @@ export function ActRisk() {
   );
 }
 
-function CinematicNumber({
-  label,
-  value,
-  suffix,
-  reveal,
-  delay,
-  accent,
-}: {
-  label: string;
-  value: string;
-  suffix: string;
-  reveal: number;
-  delay: number;
-  accent?: "amber" | "cyan";
-}) {
-  const local = Math.min(1, Math.max(0, (reveal - delay) / 0.4));
-  return (
-    <div
-      className={cn("cinematic-number", accent && `cinematic-number--${accent}`)}
-      style={{
-        opacity: local,
-        transform: `translateY(${(1 - local) * 18}px)`,
-      }}
-    >
-      <span className="cinematic-number__label">{label}</span>
-      <span className="cinematic-number__value">{value}</span>
-      <span className="cinematic-number__suffix">{suffix}</span>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────
-// ACT V — Closing (invitation, not "pricing cards")
+// ACT V — Invitation
 // ─────────────────────────────────────────────────────────────────
 export function ActInvitation() {
-  const [ref, p] = useScrollProgress<HTMLElement>();
-  const op1 = smoothstep(0.1, 0.4, p);
-  const op2 = smoothstep(0.3, 0.6, p);
-  const op3 = smoothstep(0.5, 0.8, p);
-
+  const ref = useReveal<HTMLElement>();
   return (
     <section ref={ref} className="cinematic-act cinematic-act--invitation">
       <div className="cinematic-act__sticky">
-        <div className="cinematic-invite">
-          <p
-            className="cinematic-invite-eyebrow"
-            style={{ opacity: op1 }}
-          >
-            FINAL FRAME
-          </p>
-          <h2
-            className="cinematic-invite-title"
-            style={{ opacity: op2, transform: `translateY(${(1 - op2) * 22}px)` }}
-          >
-            The terminal is open.
-          </h2>
-          <p
-            className="cinematic-invite-sub"
-            style={{ opacity: op3 }}
-          >
-            Step inside the machine.
-          </p>
-          <div
-            className="cinematic-invite-actions"
-            style={{ opacity: op3 }}
-          >
+        <div className="cinematic-invite cine-fade-up">
+          <p className="cinematic-invite__eyebrow">FINAL FRAME</p>
+          <h2 className="cinematic-invite__title">The terminal is open.</h2>
+          <p className="cinematic-invite__sub">Step inside the machine.</p>
+          <div className="cinematic-invite__actions">
             <Link href="/terminal" className="cinematic-cta cinematic-cta--strong">
               <span>Enter terminal</span>
-              <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
+              <svg width="16" height="10" viewBox="0 0 18 10" fill="none" aria-hidden>
                 <path d="M1 5h15m0 0L12 1m4 4l-4 4" stroke="currentColor" strokeWidth="1" />
               </svg>
             </Link>

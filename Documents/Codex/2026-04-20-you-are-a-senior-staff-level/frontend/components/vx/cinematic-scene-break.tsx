@@ -1,17 +1,18 @@
 "use client";
 
 interface SceneBreakProps {
-  label: string;
+  label?: string;
 }
 
 /**
- * CinematicSceneBreak — a full-bleed pause between acts.
- * Breaks template rhythm. Negative space. Pure atmosphere.
+ * CinematicSceneBreak — calm vertical line between acts.
+ * Pure decorative. Pointer-events none.
  */
 export function CinematicSceneBreak({ label }: SceneBreakProps) {
   return (
     <div className="cinematic-scene-break" aria-hidden>
-      <span className="cinematic-scene-break__quote">{label}</span>
+      <span className="cinematic-scene-break__line" />
+      {label ? <span className="cinematic-scene-break__quote">{label}</span> : null}
     </div>
   );
 }
