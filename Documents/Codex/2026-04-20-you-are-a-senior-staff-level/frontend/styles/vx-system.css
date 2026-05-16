@@ -345,7 +345,8 @@
 
 .vx-app-main--landing {
   max-width: none;
-  padding-bottom: 2rem;
+  padding: 0;
+  padding-bottom: 0;
 }
 
 .vx-navbar .vx-nav-clock {
