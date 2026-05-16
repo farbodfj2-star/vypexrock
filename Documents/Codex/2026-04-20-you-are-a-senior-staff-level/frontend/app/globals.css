@@ -4,6 +4,7 @@
 
 @import "../styles/vx-system.css";
 @import "../styles/cinematic.css";
+@import "../styles/markets.css";
 
 /* Legacy cinema/premium classes remain for older routes; new UI uses vx-* in vx-system.css */
 

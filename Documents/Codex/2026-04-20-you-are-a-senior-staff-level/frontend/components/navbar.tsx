@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, Bot, BrainCircuit, ChevronRight, Crown, Home, LineChart, LogOut, NotebookPen, ScanSearch, ShieldCheck, Star, Users, WalletCards } from "lucide-react";
+import { Bell, Bot, BrainCircuit, ChevronRight, Crown, Globe2, Home, LineChart, LogOut, NotebookPen, ScanSearch, ShieldCheck, Star, Users, WalletCards } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { resolveApiAssetUrl } from "@/lib/api";
@@ -15,6 +15,7 @@ const navLinks = [
   { href: "/", label: "Home", icon: Home },
   { href: "/terminal", label: "Terminal", icon: BrainCircuit },
   { href: "/chart-analyzer", label: "Charts", icon: ScanSearch },
+  { href: "/markets", label: "Markets", icon: Globe2 },
   { href: "/ai", label: "AI", icon: Bot },
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/alerts", label: "Alerts", icon: Bell }

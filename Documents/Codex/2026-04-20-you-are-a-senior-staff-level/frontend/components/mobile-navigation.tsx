@@ -10,6 +10,7 @@ import {
   BrainCircuit,
   ChartCandlestick,
   ChevronRight,
+  Globe2,
   Home,
   LineChart,
   LogIn,
@@ -30,6 +31,7 @@ import { cn } from "@/lib/utils";
 const primaryItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/terminal", label: "Terminal", icon: BrainCircuit },
+  { href: "/markets", label: "Markets", icon: Globe2 },
   { href: "/chart-analyzer", label: "Chart", icon: ScanSearch },
   { href: "/ai", label: "AI", icon: Bot }
 ];
