@@ -1033,3 +1033,302 @@ body:has(.cinematic-film) .vx-app-main--landing {
     transition-duration: 0.2s !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   v3 — WORDMARK · TICKER · SIDE RAILS · FIXED HUDs
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── WORDMARK · single mask-up reveal ──
+   Not typing. Not letter-by-letter. One smooth movie-title reveal. */
+.cinematic-wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: clamp(28px, 4vh, 48px);
+}
+
+.cinematic-wordmark__mask {
+  display: inline-block;
+  overflow: hidden;
+  padding: 0 0.04em;
+  line-height: 0.85;
+  margin-top: 0;
+}
+
+.cinematic-wordmark__text {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: clamp(3.5rem, 11vw, 11rem);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--c-ink);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.65) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transform: translate3d(0, 110%, 0);
+  transition: transform 1.4s var(--ease-glide);
+  will-change: transform;
+}
+
+.cinematic-wordmark.is-in .cinematic-wordmark__text {
+  transform: translate3d(0, 0, 0);
+}
+
+.cinematic-wordmark__sub {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.55);
+  padding-left: 0.5em;
+  opacity: 0;
+  transform: translate3d(0, 6px, 0);
+  transition: opacity 0.8s var(--ease-cine) 0.6s, transform 0.8s var(--ease-cine) 0.6s;
+}
+
+.cinematic-wordmark.is-in .cinematic-wordmark__sub {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ── TAGLINE · two-line stacked ── */
+.cinematic-tagline {
+  margin-top: clamp(28px, 5vh, 56px);
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: clamp(1.4rem, 2.6vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+  text-align: center;
+}
+
+.cinematic-tagline p {
+  margin: 0;
+}
+
+.cinematic-tagline__quiet {
+  font-style: italic;
+  color: rgba(246, 247, 251, 0.36);
+}
+
+/* ── CTA row ── */
+.cinematic-cta-row {
+  margin-top: clamp(24px, 4vh, 44px);
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── SCROLL HINT — fixed bottom-center ── */
+.cinematic-scroll-hint-fixed {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ── TICKER TAPE — top, marquee ── */
+.cinematic-ticker {
+  position: absolute;
+  top: 86px;
+  left: 0;
+  right: 0;
+  height: 36px;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(0, -8px, 0);
+  transition: opacity 0.9s var(--ease-cine), transform 0.9s var(--ease-cine);
+}
+
+.cinematic-ticker.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.cinematic-ticker__rail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-top: 1px solid var(--c-edge);
+  border-bottom: 1px solid var(--c-edge);
+  background: linear-gradient(180deg, rgba(13, 17, 24, 0.55), rgba(6, 8, 13, 0.4));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+}
+
+.cinematic-ticker__track {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: max-content;
+  animation: cine-ticker 60s linear infinite;
+  will-change: transform;
+}
+
+@keyframes cine-ticker {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.cinematic-ticker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(246, 247, 251, 0.8);
+  white-space: nowrap;
+}
+
+.cinematic-ticker__sym {
+  font-weight: 600;
+  color: rgba(246, 247, 251, 0.95);
+  letter-spacing: 0.18em;
+}
+
+.cinematic-ticker__px {
+  color: rgba(246, 247, 251, 0.7);
+  font-feature-settings: "tnum";
+}
+
+.cinematic-ticker__chg {
+  font-feature-settings: "tnum";
+}
+
+.cinematic-ticker__chg.is-up { color: rgba(110, 231, 183, 0.9); }
+.cinematic-ticker__chg.is-dn { color: rgba(252, 165, 165, 0.9); }
+
+.cinematic-ticker__sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-left: 4px;
+}
+
+/* ── SIDE RAILS — vertical labels ── */
+.cinematic-rail {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 1s var(--ease-cine);
+}
+
+.cinematic-rail.is-in { opacity: 1; }
+
+.cinematic-rail--left { left: 28px; }
+.cinematic-rail--right { right: 28px; }
+
+.cinematic-rail__line {
+  width: 1px;
+  flex: 1 1 auto;
+  min-height: 80px;
+  max-height: 30vh;
+  background: linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.3), transparent);
+}
+
+.cinematic-rail__label {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.55);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+.cinematic-rail--right .cinematic-rail__label {
+  color: rgba(246, 247, 251, 0.32);
+}
+
+@media (max-width: 900px) {
+  .cinematic-rail { display: none; }
+}
+
+/* ── FIXED READOUT (bottom-left) ── */
+.cinematic-readout-fixed {
+  position: absolute;
+  bottom: 32px;
+  left: 32px;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-8px, 0, 0);
+  transition: opacity 1s var(--ease-cine), transform 1s var(--ease-cine);
+}
+
+.cinematic-readout-fixed.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.cinematic-readout-fixed .cinematic-readout__line {
+  /* override generic .is-in transition system: in the fixed HUD we just want them visible */
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (max-width: 900px) {
+  .cinematic-readout-fixed { display: none; }
+}
+
+/* ── FIXED SIGNAL LOCK (bottom-right) ── */
+.cinematic-signal-fixed {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(8px, 0, 0);
+  transition: opacity 1s var(--ease-cine), transform 1s var(--ease-cine);
+}
+
+.cinematic-signal-fixed.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (max-width: 900px) {
+  .cinematic-signal-fixed { display: none; }
+}
+
+/* ── Adjust horizon — fade in via .is-in ── */
+.cinematic-horizon {
+  opacity: 0;
+  transition: opacity 1.4s var(--ease-cine);
+}
+
+.cinematic-horizon.is-in {
+  opacity: 1;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-wordmark__text,
+  .cinematic-ticker__track {
+    animation: none !important;
+    transition-duration: 0.2s !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+}
