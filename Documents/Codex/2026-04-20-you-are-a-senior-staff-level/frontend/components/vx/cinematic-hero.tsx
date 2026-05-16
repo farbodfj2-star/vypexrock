@@ -9,22 +9,21 @@ type CinematicHeroProps = {
 };
 
 /**
- * Cinematic Hero v3 — directed opening:
+ * Cinematic Hero v4 — directed opening + scroll-driven RISK→RICH transformation.
  *
  *   t=0.00s   black, dust drifts in
- *   t=0.40s   "VYPEXROCK" word-reveal (mask-up, ONE word, ONE animation)
- *   t=1.20s   horizon line scans across
- *   t=1.60s   BTC chart materializes underneath
- *   t=2.40s   ticker tape, side rails, scan dot, hud lines
+ *   t=0.40s   "VYPEXROCK" word-reveal (mask-up, ONE word)
+ *   t=1.20s   horizon line scans
+ *   t=1.60s   BIGGER BTC chart materializes
+ *   t=2.40s   ticker tape, side rails, HUD lines
  *   t=2.80s   tagline
  *   t=3.40s   CTAs + scroll hint
  *
- * On scroll: candles pan horizontally (parallax), HUDs fade, vignette tightens.
- *
- * Engineering rules unchanged from v2:
- *   • All motion via CSS variables on a single rAF.
- *   • Zero React state for scroll/mouse motion.
- *   • Deterministic candles.
+ * On scroll:
+ *   0–40%     chart pans horizontally, hero copy stays
+ *   40–100%   chart slides DOWN with scroll (literally follows mouse-wheel),
+ *             RISK typing emerges, transforms into RICH,
+ *             chart fades to dim background as RICH dominates
  */
 const INTRO_MS = 4200;
 
@@ -41,13 +40,15 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
   const railRightRef = useRef<HTMLDivElement>(null);
   const readoutRef = useRef<HTMLDivElement>(null);
   const lockRef = useRef<HTMLDivElement>(null);
+  const richRef = useRef<HTMLDivElement>(null);
+  const richTextRef = useRef<HTMLSpanElement>(null);
+  const richCaptionRef = useRef<HTMLDivElement>(null);
   const [, setReady] = useState(false);
 
   // ─── INTRO TIMELINE ───
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-
     const reveals: Array<[number, React.RefObject<HTMLElement>]> = [
       [0.4, wordmarkRef as any],
       [1.2, horizonRef as any],
@@ -60,7 +61,6 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
       [3.4, ctaRef as any],
       [3.7, hintRef as any],
     ];
-
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const skip = sessionStorage.getItem("vx-intro-played") === "1" || reduceMotion;
 
@@ -106,12 +106,10 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
 
     let raf = 0;
     let tx = 0, ty = 0, cx = 0, cy = 0;
-
     const onMove = (e: MouseEvent) => {
       tx = e.clientX / window.innerWidth - 0.5;
       ty = e.clientY / window.innerHeight - 0.5;
     };
-
     const tick = () => {
       cx += (tx - cx) * 0.06;
       cy += (ty - cy) * 0.06;
@@ -119,7 +117,6 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
       stage.style.setProperty("--my", cy.toFixed(4));
       raf = requestAnimationFrame(tick);
     };
-
     window.addEventListener("mousemove", onMove, { passive: true });
     raf = requestAnimationFrame(tick);
     return () => {
@@ -128,11 +125,12 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
     };
   }, []);
 
-  // ─── SCROLL PROGRESS — drives chart scrub + HUD fade ───
+  // ─── SCROLL PROGRESS + RICH typing trigger ───
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
     let raf = 0;
+    let typingFired = false;
 
     const update = () => {
       const rect = stage.getBoundingClientRect();
@@ -140,6 +138,18 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
       const scrolled = window.innerHeight - rect.top;
       const p = Math.max(0, Math.min(1, scrolled / total));
       stage.style.setProperty("--hero-progress", p.toFixed(4));
+
+      // Reveal RICH overlay when scroll passes ~35%
+      if (richRef.current) {
+        if (p > 0.32) richRef.current.classList.add("is-in");
+        else richRef.current.classList.remove("is-in");
+      }
+
+      // Trigger the RISK→RICH typing once when overlay first reveals
+      if (!typingFired && p > 0.35 && richTextRef.current && richCaptionRef.current) {
+        typingFired = true;
+        runRichTyping(richTextRef.current, richCaptionRef.current);
+      }
     };
 
     const onScroll = () => {
@@ -154,7 +164,7 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
     };
   }, []);
 
-  // ─── CHART CANVAS — scroll-scrub candles like film reel ───
+  // ─── CHART CANVAS — bigger candles, scroll-scrub ───
   useEffect(() => {
     const canvas = canvasRef.current;
     const stage = stageRef.current;
@@ -176,11 +186,9 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    // Generate a longer candle array — extra candles offstage right
-    // so scrolling pans the chart and reveals new candles continuously.
-    const TOTAL = 220;
+    const TOTAL = 200;
     const candles = generateCandles(TOTAL, 47000);
-    const VISIBLE = 100;
+    const VISIBLE = 64; // ⬅ was 100. Fewer visible → bigger candles.
 
     const prices = candles.flatMap((c) => [c.high, c.low]);
     const minP = Math.min(...prices);
@@ -197,25 +205,25 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
 
       const intro = parseFloat(stage.style.getPropertyValue("--intro") || "0");
       const heroP = parseFloat(stage.style.getPropertyValue("--hero-progress") || "0");
-      // chart appears at ~1.6s into intro
-      const chartReveal = smoothstep(0.34, 1.0, intro) * (1 - smoothstep(0.85, 1.0, heroP) * 0.6);
+      // chart visible from intro 0.34 onwards. Fade out as RICH dominates (>0.55 progress).
+      const fadeOut = smoothstep(0.55, 0.95, heroP);
+      const chartReveal = smoothstep(0.34, 1.0, intro) * (1 - fadeOut * 0.85);
 
       ctx.clearRect(0, 0, w, h);
-      if (chartReveal <= 0.01) {
+      if (chartReveal <= 0.005) {
         raf = requestAnimationFrame(tick);
         return;
       }
 
-      // Scroll-scrub: pan candles left as scroll progresses
-      // 0.0 progress → showing candles 0..VISIBLE
-      // 1.0 progress → showing candles (TOTAL - VISIBLE)..TOTAL
-      const candleStart = (TOTAL - VISIBLE) * heroP;
+      // pan progress only uses the first ~55% of scroll, then freezes
+      const panT = Math.min(1, heroP / 0.55);
+      const candleStart = (TOTAL - VISIBLE) * panT;
 
-      const cw = (w / VISIBLE) * 0.55;
+      const cw = (w / VISIBLE) * 0.7; // ⬅ was 0.55. Bigger candle bodies.
       const cs = w / VISIBLE;
 
       const priceY = (price: number) => {
-        const top = h * 0.28;
+        const top = h * 0.22;
         const bottom = h * 0.78;
         return top + (bottom - top) * (1 - (price - minP + pad) / range);
       };
@@ -227,7 +235,7 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
       ctx.fillStyle = fog;
       ctx.fillRect(0, 0, w, h);
 
-      // ── perspective floor grid (slow scroll-aware drift) ──
+      // ── perspective floor grid ──
       ctx.save();
       ctx.strokeStyle = "rgba(125, 211, 252, 0.16)";
       ctx.lineWidth = 0.5;
@@ -241,7 +249,6 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
         ctx.lineTo(w, y);
         ctx.stroke();
       }
-      // verticals scrolling left
       const stepV = w / 22;
       const vOffset = -((heroP * w * 1.5) % stepV);
       for (let i = -1; i < 24; i++) {
@@ -254,7 +261,7 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
       }
       ctx.restore();
 
-      // ── liquidity zones (gated by scroll) ──
+      // ── liquidity zones ──
       const liqGate = smoothstep(0.04, 0.22, heroP);
       if (liqGate > 0.01) {
         const zones = [
@@ -264,14 +271,14 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
         zones.forEach((z) => {
           ctx.save();
           ctx.globalAlpha = 0.18 * chartReveal * liqGate;
-          const zg = ctx.createLinearGradient(0, z.y - 18, 0, z.y + 18);
+          const zg = ctx.createLinearGradient(0, z.y - 22, 0, z.y + 22);
           zg.addColorStop(0, "rgba(0,0,0,0)");
-          zg.addColorStop(0.5, `rgba(${z.color}, 0.5)`);
+          zg.addColorStop(0.5, `rgba(${z.color}, 0.55)`);
           zg.addColorStop(1, "rgba(0,0,0,0)");
           ctx.fillStyle = zg;
-          ctx.fillRect(0, z.y - 18, w, 36);
+          ctx.fillRect(0, z.y - 22, w, 44);
           ctx.globalAlpha = 0.5 * chartReveal * liqGate;
-          ctx.strokeStyle = `rgba(${z.color}, 0.6)`;
+          ctx.strokeStyle = `rgba(${z.color}, 0.65)`;
           ctx.lineWidth = 1;
           ctx.setLineDash([2, 6]);
           ctx.beginPath();
@@ -283,7 +290,7 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
         });
       }
 
-      // ── candles (with sub-pixel scroll-scrub) ──
+      // ── candles (BIGGER, brighter) ──
       const startIdx = Math.floor(candleStart);
       const subPixel = (candleStart - startIdx) * cs;
 
@@ -299,37 +306,32 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
         const hy = priceY(c.high);
         const ly = priceY(c.low);
 
-        // edge fade — left & right edges blur out
         const t = i / VISIBLE;
-        const edgeFade = Math.min(
-          smoothstep(0, 0.08, t),
-          smoothstep(1, 0.92, t),
-        );
+        const edgeFade = Math.min(smoothstep(0, 0.08, t), smoothstep(1, 0.92, t));
         const localOp = chartReveal * edgeFade;
 
-        // wick
         ctx.save();
-        ctx.globalAlpha = 0.6 * localOp;
-        ctx.strokeStyle = isUp ? "rgba(110, 231, 183, 0.85)" : "rgba(252, 165, 165, 0.85)";
-        ctx.lineWidth = 1;
+        // wick (thicker for bigger candles)
+        ctx.globalAlpha = 0.7 * localOp;
+        ctx.strokeStyle = isUp ? "rgba(110, 231, 183, 0.9)" : "rgba(252, 165, 165, 0.9)";
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.moveTo(x, hy);
         ctx.lineTo(x, ly);
         ctx.stroke();
 
-        // body — focus zone in middle 1/3 brighter
-        const focus = i > VISIBLE * 0.55 && i < VISIBLE * 0.95 ? 1.15 : 1;
-        ctx.shadowColor = isUp ? "rgba(16, 185, 129, 0.4)" : "rgba(244, 63, 94, 0.4)";
-        ctx.shadowBlur = 10 * focus;
+        const focus = i > VISIBLE * 0.55 && i < VISIBLE * 0.95 ? 1.25 : 1;
+        ctx.shadowColor = isUp ? "rgba(16, 185, 129, 0.55)" : "rgba(244, 63, 94, 0.55)";
+        ctx.shadowBlur = 14 * focus;
         ctx.fillStyle = isUp
-          ? `rgba(16, 185, 129, ${0.85 * localOp})`
-          : `rgba(239, 68, 68, ${0.85 * localOp})`;
-        const bh = Math.max(1.5, Math.abs(cy - oy));
+          ? `rgba(16, 185, 129, ${0.92 * localOp})`
+          : `rgba(239, 68, 68, ${0.92 * localOp})`;
+        const bh = Math.max(2.5, Math.abs(cy - oy));
         ctx.fillRect(x - cw / 2, Math.min(oy, cy), cw, bh);
         ctx.restore();
       }
 
-      // ── live price marker on rightmost visible candle ──
+      // ── live price chip ──
       const rightIdx = Math.min(TOTAL - 1, startIdx + VISIBLE - 1);
       const rightCandle = candles[rightIdx];
       const rightX = (VISIBLE - 1) * cs + cs / 2 - subPixel;
@@ -338,40 +340,37 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
 
       ctx.save();
       ctx.globalAlpha = chartReveal;
-      // dotted line to right edge
       ctx.strokeStyle = isUpRight ? "rgba(110, 231, 183, 0.5)" : "rgba(252, 165, 165, 0.5)";
       ctx.lineWidth = 0.6;
       ctx.setLineDash([2, 4]);
       ctx.beginPath();
       ctx.moveTo(rightX, rightY);
-      ctx.lineTo(w - 60, rightY);
+      ctx.lineTo(w - 70, rightY);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // pulsing dot
       const pulse = (Math.sin(frame * 0.06) + 1) / 2;
-      ctx.fillStyle = isUpRight ? `rgba(110, 231, 183, ${0.5 + pulse * 0.4})` : `rgba(252, 165, 165, ${0.5 + pulse * 0.4})`;
-      ctx.shadowColor = isUpRight ? "rgba(16, 185, 129, 0.9)" : "rgba(244, 63, 94, 0.9)";
-      ctx.shadowBlur = 14;
+      ctx.fillStyle = isUpRight ? `rgba(110, 231, 183, ${0.6 + pulse * 0.4})` : `rgba(252, 165, 165, ${0.6 + pulse * 0.4})`;
+      ctx.shadowColor = isUpRight ? "rgba(16, 185, 129, 0.95)" : "rgba(244, 63, 94, 0.95)";
+      ctx.shadowBlur = 18;
       ctx.beginPath();
-      ctx.arc(rightX, rightY, 2 + pulse * 1.5, 0, Math.PI * 2);
+      ctx.arc(rightX, rightY, 3 + pulse * 1.6, 0, Math.PI * 2);
       ctx.fill();
 
-      // floating price chip
       const priceChip = "$" + Math.round(rightCandle.close).toLocaleString();
       ctx.shadowBlur = 0;
-      ctx.font = "11px ui-monospace, SF Mono, monospace";
-      const chipW = ctx.measureText(priceChip).width + 14;
-      ctx.fillStyle = "rgba(6, 8, 13, 0.85)";
-      ctx.strokeStyle = isUpRight ? "rgba(110, 231, 183, 0.5)" : "rgba(252, 165, 165, 0.5)";
+      ctx.font = "12px ui-monospace, SF Mono, monospace";
+      const chipW = ctx.measureText(priceChip).width + 16;
+      ctx.fillStyle = "rgba(6, 8, 13, 0.88)";
+      ctx.strokeStyle = isUpRight ? "rgba(110, 231, 183, 0.55)" : "rgba(252, 165, 165, 0.55)";
       ctx.lineWidth = 1;
-      const chipX = w - 12 - chipW;
-      const chipY = rightY - 11;
-      roundRect(ctx, chipX, chipY, chipW, 22, 6);
+      const chipX = w - 14 - chipW;
+      const chipY = rightY - 12;
+      roundRect(ctx, chipX, chipY, chipW, 24, 6);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = isUpRight ? "rgba(167, 243, 208, 1)" : "rgba(254, 205, 211, 1)";
-      ctx.fillText(priceChip, chipX + 7, chipY + 15);
+      ctx.fillText(priceChip, chipX + 8, chipY + 16);
       ctx.restore();
 
       raf = requestAnimationFrame(tick);
@@ -389,41 +388,39 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
     <section
       ref={stageRef}
       className="cinematic-hero-stage relative w-full overflow-hidden"
-      style={{ minHeight: "260vh" }}
+      style={{ minHeight: "320vh" }}
     >
       <div className="sticky top-0 flex h-screen w-full flex-col overflow-hidden">
-        {/* layer 1 — soft ambient glow */}
+        {/* layer 1 — soft ambient */}
         <div className="cinematic-ambient" aria-hidden />
 
-        {/* layer 2 — horizon line that scans in */}
+        {/* layer 2 — horizon */}
         <div ref={horizonRef} className="cinematic-horizon" aria-hidden />
 
-        {/* layer 3 — chart canvas */}
-        <canvas ref={canvasRef} className="cinematic-canvas" aria-hidden />
+        {/* layer 3 — chart canvas (slides DOWN with scroll past 40%) */}
+        <canvas ref={canvasRef} className="cinematic-canvas cinematic-canvas--scroll" aria-hidden />
 
         {/* layer 4 — vignette */}
         <div className="cinematic-vignette" aria-hidden />
 
-        {/* layer 5 — left side rail (vertical text) */}
+        {/* layer 5/6 — side rails */}
         <div ref={railLeftRef} className="cinematic-rail cinematic-rail--left" aria-hidden>
           <span className="cinematic-rail__line" />
           <span className="cinematic-rail__label">MARKETS · LIVE FEED</span>
           <span className="cinematic-rail__line" />
         </div>
-
-        {/* layer 6 — right side rail */}
         <div ref={railRightRef} className="cinematic-rail cinematic-rail--right" aria-hidden>
           <span className="cinematic-rail__line" />
           <span className="cinematic-rail__label">02 · OPENING SEQUENCE</span>
           <span className="cinematic-rail__line" />
         </div>
 
-        {/* layer 7 — top ticker tape */}
+        {/* layer 7 — ticker */}
         <div ref={tickerRef} className="cinematic-ticker" aria-hidden>
           <CinematicTicker />
         </div>
 
-        {/* layer 8 — readout HUD bottom-left */}
+        {/* layer 8/9 — fixed HUDs */}
         <div ref={readoutRef} className="cinematic-readout-fixed" aria-hidden>
           <div className="cinematic-readout">
             <span className="cinematic-readout__line"><span className="cinematic-readout__pulse" />scanning structure</span>
@@ -431,15 +428,27 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
             <span className="cinematic-readout__line" style={{ transitionDelay: "0.36s" }}><span className="cinematic-readout__pulse" />confidence · 88%</span>
           </div>
         </div>
-
-        {/* layer 9 — signal lock bottom-right */}
         <div ref={lockRef} className="cinematic-signal-fixed" aria-hidden>
           <CinematicSignalLock />
         </div>
 
-        {/* layer 10 — foreground content */}
-        <div className="relative z-10 mx-auto flex h-full w-full max-w-[1400px] flex-col items-center justify-center px-6 text-center">
-          {/* the wordmark — appears FIRST as one mask reveal, no typing */}
+        {/* RICH OVERLAY — appears at scroll > 35%, types RISK then morphs to RICH */}
+        <div ref={richRef} className="cinematic-rich" aria-hidden>
+          <div className="cinematic-rich__inner">
+            <div ref={richCaptionRef} className="cinematic-rich__caption">
+              <span className="cinematic-rich__caption-bar" />
+              <span>FROM</span>
+            </div>
+            <div className="cinematic-rich__word">
+              <span ref={richTextRef} className="cinematic-rich__text">R</span>
+              <span className="cinematic-rich__cursor" />
+            </div>
+            <p className="cinematic-rich__sub">discipline turns the market into your engine.</p>
+          </div>
+        </div>
+
+        {/* foreground content */}
+        <div className="cinematic-fg-stack relative z-10 mx-auto flex h-full w-full max-w-[1400px] flex-col items-center justify-center px-6 text-center">
           <div ref={wordmarkRef} className="cinematic-wordmark">
             <span className="cinematic-wordmark__mask">
               <span className="cinematic-wordmark__text">VYPEXROCK</span>
@@ -447,13 +456,11 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
             <span className="cinematic-wordmark__sub">INSTITUTIONAL CRYPTO INTELLIGENCE</span>
           </div>
 
-          {/* tagline — comes after the chart materializes */}
           <div ref={taglineRef} className="cine-fade-up cinematic-tagline">
             <p>The market speaks first.</p>
             <p className="cinematic-tagline__quiet">We listen.</p>
           </div>
 
-          {/* CTAs */}
           <div ref={ctaRef} className="cine-fade-up cinematic-cta-row" style={{ transitionDelay: "0.1s" }}>
             <Link href="/terminal" className="cinematic-cta cinematic-cta--strong">
               <span>Enter terminal</span>
@@ -466,7 +473,6 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
             </Link>
           </div>
 
-          {/* scroll hint */}
           <div ref={hintRef} className="cine-fade-up cinematic-scroll-hint-fixed" style={{ transitionDelay: "0.15s" }}>
             <div className="cinematic-scroll-hint" aria-hidden>
               <span className="cinematic-scroll-hint__line" />
@@ -475,16 +481,66 @@ export function CinematicHero({ rows: _rows }: CinematicHeroProps) {
           </div>
         </div>
       </div>
-
-      {/* spacer for scroll-scrub */}
-      <div aria-hidden style={{ height: "160vh" }} />
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Live ticker tape — pure CSS marquee, no JS
+// RISK → RICH typing logic
 // ─────────────────────────────────────────────────────────────────
+function runRichTyping(textEl: HTMLElement, captionEl: HTMLElement) {
+  // sequence:
+  //   type R, I, S, K  →  "RISK"
+  //   pause
+  //   delete K, S      →  "RI"
+  //   pause briefly, change caption "FROM" → "TO"
+  //   type C, H        →  "RICH"
+  type Step =
+    | { kind: "type"; char: string; delay: number }
+    | { kind: "del"; delay: number }
+    | { kind: "wait"; delay: number }
+    | { kind: "caption"; text: string; delay: number };
+
+  const seq: Step[] = [
+    { kind: "type", char: "R", delay: 220 },
+    { kind: "type", char: "I", delay: 220 },
+    { kind: "type", char: "S", delay: 220 },
+    { kind: "type", char: "K", delay: 220 },
+    { kind: "wait", delay: 1200 },
+    { kind: "del", delay: 220 }, // remove K
+    { kind: "del", delay: 220 }, // remove S
+    { kind: "caption", text: "TO", delay: 280 },
+    { kind: "type", char: "C", delay: 240 },
+    { kind: "type", char: "H", delay: 280 },
+  ];
+
+  textEl.textContent = "";
+  captionEl.querySelector("span:last-child")!.textContent = "FROM";
+
+  let cursor = "";
+  let i = 0;
+
+  const next = () => {
+    if (i >= seq.length) {
+      textEl.classList.add("is-final");
+      return;
+    }
+    const step = seq[i++];
+    if (step.kind === "type") {
+      cursor += step.char;
+      textEl.textContent = cursor;
+    } else if (step.kind === "del") {
+      cursor = cursor.slice(0, -1);
+      textEl.textContent = cursor;
+    } else if (step.kind === "caption") {
+      const span = captionEl.querySelector("span:last-child")!;
+      span.textContent = step.text;
+    }
+    setTimeout(next, step.delay);
+  };
+  next();
+}
+
 function CinematicTicker() {
   const items = [
     { sym: "BTC", px: "67,234", chg: "+2.40%", up: true },
@@ -497,8 +553,8 @@ function CinematicTicker() {
     { sym: "AVAX", px: "39.26", chg: "−0.51%", up: false },
     { sym: "LINK", px: "16.60", chg: "+2.04%", up: true },
     { sym: "INJ", px: "24.62", chg: "+4.12%", up: true },
+    { sym: "PEPE", px: "0.00000843", chg: "+5.68%", up: true },
   ];
-  // Duplicate for seamless marquee
   const stream = [...items, ...items];
   return (
     <div className="cinematic-ticker__rail">

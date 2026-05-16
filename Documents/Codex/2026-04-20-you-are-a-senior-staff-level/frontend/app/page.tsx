@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { CinematicHero } from "@/components/vx/cinematic-hero";
+import { CinematicLambo } from "@/components/vx/cinematic-lambo";
 import {
   ActSilenceBecomesSignal,
   ActLiquidityVision,
@@ -12,7 +13,6 @@ import {
 } from "@/components/vx/cinematic-acts";
 import { CinematicBootstrap } from "@/components/vx/cinematic-bootstrap";
 import { CinematicPreloader } from "@/components/vx/cinematic-preloader";
-import { CinematicSceneBreak } from "@/components/vx/cinematic-scene-break";
 import { useMarketStream } from "@/hooks/use-market-stream";
 import { apiFetch } from "@/lib/api";
 import { mergeMarketRows } from "@/lib/asset-catalog";
@@ -35,21 +35,17 @@ export default function HomePage() {
       <CinematicPreloader />
       <CinematicBootstrap />
 
+      {/* Hero (with built-in RISK→RICH overlay) */}
       <CinematicHero rows={rows} />
 
-      <CinematicSceneBreak />
+      {/* Lambo cinematic — coins float, supercar drives across, "for this....." typing */}
+      <CinematicLambo />
+
+      {/* Continuing acts — no scene breaks, fluid one-page flow */}
       <ActSilenceBecomesSignal />
-
-      <CinematicSceneBreak />
       <ActLiquidityVision />
-
-      <CinematicSceneBreak />
       <ActOrbit />
-
-      <CinematicSceneBreak />
       <ActRisk />
-
-      <CinematicSceneBreak />
       <ActInvitation />
     </div>
   );

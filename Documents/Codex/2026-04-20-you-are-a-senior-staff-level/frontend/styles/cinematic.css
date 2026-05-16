@@ -1332,3 +1332,538 @@ body:has(.cinematic-film) .vx-app-main--landing {
     transform: translate3d(0, 0, 0) !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   v4 — CHART SLIDE-DOWN · RICH TYPING · LAMBO ACT
+   ═══════════════════════════════════════════════════════════════════ */
+
+/*
+   The chart canvas now SLIDES DOWN with scroll past 40%.
+   At 0% it sits in its normal position.
+   At 100% it is translated 75vh down + dimmed.
+*/
+.cinematic-canvas--scroll {
+  /* base position handled by .cinematic-canvas */
+  /* compute slide as max(0, scroll - 0.4) * 1.7 → 0 → 1 */
+  transform: translate3d(
+    calc(var(--mx, 0) * 4px),
+    calc(max(0, var(--hero-progress, 0) - 0.4) * 75vh),
+    0
+  );
+  filter: blur(calc(max(0, var(--hero-progress, 0) - 0.55) * 2px));
+  transition: filter 0.3s linear;
+}
+
+/* Foreground stack lifts UP slightly past 40% so RICH dominates */
+.cinematic-fg-stack {
+  transform: translate3d(
+    0,
+    calc(max(0, var(--hero-progress, 0) - 0.4) * -10vh),
+    0
+  );
+  opacity: calc(1 - max(0, var(--hero-progress, 0) - 0.45) * 1.3);
+  pointer-events: auto;
+  transition: none;
+}
+
+/* HUDs fade out when RICH dominates */
+.cinematic-readout-fixed,
+.cinematic-signal-fixed {
+  /* keep their base transition; just multiply final opacity */
+  filter: opacity(calc(1 - max(0, var(--hero-progress, 0) - 0.4) * 1.6));
+}
+
+/* ── RICH OVERLAY — the typing scene ── */
+.cinematic-rich {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition: opacity 0.7s var(--ease-cine), transform 0.7s var(--ease-cine);
+  padding: 0 24px;
+}
+
+.cinematic-rich.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.cinematic-rich__inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 900px;
+}
+
+.cinematic-rich__caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.7);
+}
+
+.cinematic-rich__caption-bar {
+  display: inline-block;
+  width: 44px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.7));
+}
+
+.cinematic-rich__word {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: clamp(5rem, 14vw, 14rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  color: var(--c-ink);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.55) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 32px rgba(125, 211, 252, 0.18));
+}
+
+.cinematic-rich__text {
+  display: inline-block;
+  min-width: 0.6em;
+  font-feature-settings: "ss01";
+}
+
+.cinematic-rich__text.is-final {
+  background: linear-gradient(120deg, #d6e4ee 0%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 36px rgba(125, 211, 252, 0.45));
+  transition: filter 1s var(--ease-cine);
+}
+
+.cinematic-rich__cursor {
+  display: inline-block;
+  width: 0.06em;
+  height: 0.85em;
+  margin-left: 0.06em;
+  background: var(--c-cyan);
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.7);
+  animation: cine-rich-cursor 0.9s steps(2) infinite;
+  transform: translateY(0.05em);
+}
+
+@keyframes cine-rich-cursor {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.cinematic-rich__sub {
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-style: italic;
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  color: rgba(246, 247, 251, 0.4);
+  letter-spacing: 0.005em;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LAMBO ACT — supercar drives across, coins float past, slow typing
+   ═══════════════════════════════════════════════════════════════════ */
+.cinematic-lambo {
+  position: relative;
+  width: 100%;
+  min-height: 240vh;
+  background:
+    radial-gradient(ellipse 60% 35% at 50% 60%, rgba(125, 211, 252, 0.06), transparent 70%),
+    linear-gradient(180deg, #000 0%, #04060a 30%, #06080d 60%, #04060a 90%, #000 100%);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.cinematic-lambo__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --lambo-p: 0;
+}
+
+/* ground — wet asphalt reflective plane */
+.cinematic-lambo__ground {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 0;
+  height: 38%;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(125, 211, 252, 0.07), transparent 70%),
+    linear-gradient(180deg, transparent 0%, rgba(13, 17, 24, 0.6) 50%, #02040a 100%);
+  filter: blur(0.5px);
+  transform: perspective(800px) rotateX(50deg);
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+
+/* ground grid lines drifting */
+.cinematic-lambo__ground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(90deg, transparent calc(50% - 0.5px), rgba(125, 211, 252, 0.18) 50%, transparent calc(50% + 0.5px)),
+    repeating-linear-gradient(180deg, transparent 0, transparent 40px, rgba(125, 211, 252, 0.16) 40px, rgba(125, 211, 252, 0.16) 41px);
+  background-size: 100% 100%, 100% 80px;
+  background-position: 0 0, 0 calc(var(--lambo-p) * -800px);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 100%);
+}
+
+/* horizon scan beams sweeping right→left */
+.cinematic-lambo__beam {
+  position: absolute;
+  width: 60%;
+  height: 1px;
+  pointer-events: none;
+  opacity: 0.5;
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.55), transparent);
+}
+
+.cinematic-lambo__beam--1 {
+  top: 38%;
+  left: -10%;
+  animation: cine-lambo-beam 9s linear infinite;
+}
+
+.cinematic-lambo__beam--2 {
+  top: 50%;
+  left: -10%;
+  animation: cine-lambo-beam 13s linear infinite 2s;
+  opacity: 0.3;
+}
+
+@keyframes cine-lambo-beam {
+  0% { transform: translateX(-50%); opacity: 0; }
+  20% { opacity: 0.55; }
+  80% { opacity: 0.55; }
+  100% { transform: translateX(180%); opacity: 0; }
+}
+
+/* vertical city light streaks */
+.cinematic-lambo__streaks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cinematic-lambo__streaks > span {
+  position: absolute;
+  top: -10%;
+  bottom: 50%;
+  width: 1px;
+  left: calc(((var(--i) + 0.5) / var(--n)) * 100%);
+  background: linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.35), transparent);
+  transform: translateY(calc(var(--lambo-p) * 30vh)) scaleY(calc(0.6 + var(--lambo-p) * 0.6));
+  transform-origin: top center;
+  opacity: calc(0.2 + var(--lambo-p) * 0.5);
+  filter: blur(0.4px);
+  transition: none;
+  will-change: transform, opacity;
+}
+
+/* the car */
+.cinematic-lambo__car {
+  position: absolute;
+  bottom: 24%;
+  left: 0;
+  width: clamp(560px, 70vw, 1100px);
+  height: clamp(160px, 22vw, 320px);
+  /* drive across as scroll progresses */
+  transform: translate3d(
+    calc(-100% + var(--lambo-p) * (100vw + 100%) * 1),
+    0,
+    0
+  );
+  filter: drop-shadow(0 36px 26px rgba(0, 0, 0, 0.7));
+  pointer-events: none;
+  will-change: transform;
+}
+
+.cinematic-lambo__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cinematic-lambo__wheel-spokes {
+  transform-origin: center;
+  animation: cine-lambo-wheel 0.6s linear infinite;
+}
+
+@keyframes cine-lambo-wheel {
+  to { transform: rotate(360deg); }
+}
+
+.cinematic-lambo__headlight {
+  position: absolute;
+  top: 56%;
+  left: 4%;
+  width: 22%;
+  height: 30%;
+  background: radial-gradient(ellipse at 0% 50%, rgba(255, 255, 255, 0.85), rgba(125, 211, 252, 0.4) 30%, transparent 70%);
+  filter: blur(8px);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.cinematic-lambo__headlight--2 {
+  top: 64%;
+  left: 0;
+  width: 60%;
+  height: 38%;
+  background: radial-gradient(ellipse at 0% 50%, rgba(255, 255, 255, 0.5), rgba(125, 211, 252, 0.18) 30%, transparent 80%);
+  opacity: 0.7;
+  animation: cine-lambo-flicker 2.4s ease-in-out infinite;
+}
+
+@keyframes cine-lambo-flicker {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.55; }
+}
+
+.cinematic-lambo__underglow {
+  position: absolute;
+  bottom: -12%;
+  left: 6%;
+  right: 6%;
+  height: 22%;
+  background: radial-gradient(ellipse 60% 80% at 50% 100%, rgba(125, 211, 252, 0.35), transparent 70%);
+  filter: blur(8px);
+  mix-blend-mode: screen;
+}
+
+/* ── floating coins ── */
+.cinematic-lambo__coin {
+  position: absolute;
+  width: clamp(70px, 7vw, 110px);
+  height: clamp(70px, 7vw, 110px);
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* base float animation defines rotation/y bob */
+  animation: cine-coin-float 8s ease-in-out infinite;
+}
+
+@keyframes cine-coin-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(6deg); }
+}
+
+.cinematic-lambo__coin-disc {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(125, 211, 252, 0.35);
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.18), transparent 50%),
+    linear-gradient(160deg, #1a2030 0%, #06080d 60%, #0a0d14 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: clamp(0.85rem, 1vw, 1rem);
+  letter-spacing: 0.18em;
+  color: rgba(246, 247, 251, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 30px rgba(0, 0, 0, 0.55);
+  position: relative;
+  z-index: 1;
+}
+
+.cinematic-lambo__coin-glow {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(125, 211, 252, 0.18), transparent 60%);
+  filter: blur(14px);
+  z-index: 0;
+}
+
+/* coin positions — distributed around scene; each gets a parallax offset via --lambo-p */
+.coin--btc {
+  top: 12%;
+  left: 8%;
+  transform: translate3d(calc(var(--lambo-p) * -40px), calc(var(--lambo-p) * 18px), 0);
+}
+.coin--btc .cinematic-lambo__coin-disc { color: #fbbf77; border-color: rgba(251, 191, 119, 0.4); }
+.coin--btc .cinematic-lambo__coin-glow { background: radial-gradient(circle, rgba(251, 191, 119, 0.25), transparent 60%); }
+
+.coin--eth {
+  top: 20%;
+  right: 10%;
+  transform: translate3d(calc(var(--lambo-p) * 40px), calc(var(--lambo-p) * 14px), 0);
+  animation-delay: -2s;
+}
+.coin--eth .cinematic-lambo__coin-disc { color: #c4b5fd; border-color: rgba(196, 181, 253, 0.45); }
+.coin--eth .cinematic-lambo__coin-glow { background: radial-gradient(circle, rgba(196, 181, 253, 0.22), transparent 60%); }
+
+.coin--sol {
+  top: 56%;
+  left: 4%;
+  transform: translate3d(calc(var(--lambo-p) * -60px), calc(var(--lambo-p) * -16px), 0);
+  animation-delay: -1s;
+}
+.coin--sol .cinematic-lambo__coin-disc { color: #5eead4; border-color: rgba(94, 234, 212, 0.45); }
+
+.coin--pepe {
+  top: 64%;
+  right: 6%;
+  transform: translate3d(calc(var(--lambo-p) * 80px), calc(var(--lambo-p) * -10px), 0);
+  animation-delay: -3s;
+}
+.coin--pepe .cinematic-lambo__coin-disc { color: #86efac; border-color: rgba(134, 239, 172, 0.5); }
+.coin--pepe .cinematic-lambo__coin-glow { background: radial-gradient(circle, rgba(134, 239, 172, 0.25), transparent 60%); }
+
+.coin--doge {
+  top: 36%;
+  left: 38%;
+  transform: translate3d(calc(var(--lambo-p) * 30px), calc(var(--lambo-p) * -28px), 0);
+  animation-delay: -4s;
+}
+.coin--doge .cinematic-lambo__coin-disc { color: #fcd34d; border-color: rgba(252, 211, 77, 0.45); }
+.coin--doge .cinematic-lambo__coin-glow { background: radial-gradient(circle, rgba(252, 211, 77, 0.2), transparent 60%); }
+
+.coin--xau {
+  top: 28%;
+  left: 60%;
+  transform: translate3d(calc(var(--lambo-p) * 20px), calc(var(--lambo-p) * 24px), 0);
+  animation-delay: -5s;
+}
+.coin--xau .cinematic-lambo__coin-disc { color: #fde68a; border-color: rgba(253, 230, 138, 0.5); }
+
+/* ── lambo type ── */
+.cinematic-lambo__type {
+  position: absolute;
+  inset: auto 0 6% 0;
+  text-align: center;
+  padding: 0 24px;
+  pointer-events: none;
+  z-index: 5;
+  transform: translate3d(0, calc(var(--lambo-p) * -8vh), 0);
+}
+
+.cinematic-lambo__kicker {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.6);
+  margin: 0 0 18px;
+}
+
+.cinematic-lambo__title {
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: clamp(2.2rem, 5vw, 4.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--c-ink);
+  margin: 0 0 24px;
+  text-wrap: balance;
+}
+
+.cinematic-lambo__title em {
+  font-style: italic;
+  font-weight: 300;
+  background: linear-gradient(120deg, #d6e4ee 0%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cinematic-lambo__phrase {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  letter-spacing: 0.06em;
+  color: rgba(125, 211, 252, 0.85);
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.cinematic-lambo__phrase-cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 0.15em;
+  background: rgba(125, 211, 252, 0.85);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+  animation: cine-rich-cursor 0.85s steps(2) infinite;
+  transform: translateY(0.1em);
+}
+
+/* ── corner HUD ── */
+.cinematic-lambo__hud {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--c-edge);
+  border-radius: 999px;
+  background: rgba(6, 8, 13, 0.55);
+  backdrop-filter: blur(12px);
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.55);
+  pointer-events: none;
+}
+
+.cinematic-lambo__hud-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-cyan);
+  box-shadow: 0 0 8px rgba(125, 211, 252, 0.6);
+  animation: cine-preloader-dot 1.6s ease-in-out infinite;
+}
+
+@media (max-width: 720px) {
+  .cinematic-lambo__hud { display: none; }
+  .cinematic-lambo__type { inset: auto 0 4% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-lambo__beam,
+  .cinematic-lambo__wheel-spokes,
+  .cinematic-lambo__coin,
+  .cinematic-lambo__headlight--2,
+  .cinematic-lambo__hud-dot {
+    animation: none !important;
+  }
+  .cinematic-lambo__car {
+    transform: translate3d(calc(-100% + var(--lambo-p, 1) * (100vw + 100%)), 0, 0) !important;
+  }
+}
