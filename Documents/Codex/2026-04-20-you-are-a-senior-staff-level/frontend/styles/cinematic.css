@@ -1097,3 +1097,40 @@
     font-size: 0.85rem;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL OVERRIDES — when on the cinematic page, body should be true black
+   ═══════════════════════════════════════════════════════════════════ */
+body:has(.cinematic-film) {
+  background: #000 !important;
+  background-image: none !important;
+}
+
+body:has(.cinematic-film)::before,
+body:has(.cinematic-film)::after {
+  display: none !important;
+}
+
+/* keep the navbar but make its background blend on the cinematic page */
+body:has(.cinematic-film) .vx-navbar {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 80%, transparent 100%) !important;
+  border-color: transparent !important;
+  backdrop-filter: blur(8px);
+}
+
+/* hide the existing ambient blobs — we use our own cinematic atmosphere */
+body:has(.cinematic-film) .vx-mouse-glow {
+  display: none !important;
+}
+
+/* the sidebar also fights with the cinematic frame on /, kill it on landing */
+body:has(.cinematic-film) .vx-app-main--landing > aside,
+body:has(.cinematic-film) .vx-app-main--landing > nav.vx-sidebar {
+  display: none !important;
+}
+
+body:has(.cinematic-film) .vx-app-main--landing {
+  padding: 0 !important;
+  gap: 0 !important;
+}
