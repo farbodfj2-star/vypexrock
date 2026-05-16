@@ -109,6 +109,35 @@ class Settings(BaseSettings):
     smtp_from_email: str = "security@vypexrock.com"
     smtp_from_name: str = "Vypexrock Security"
     smtp_use_tls: bool = True
+    
+    # OAuth settings
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
+    
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+    github_redirect_uri: str = "http://localhost:8000/api/v1/auth/github/callback"
+    
+    apple_client_id: str | None = None
+    apple_team_id: str | None = None
+    apple_key_id: str | None = None
+    apple_private_key: str | None = None
+    apple_redirect_uri: str = "http://localhost:8000/api/v1/auth/apple/callback"
+    
+    # Frontend URL for email links
+    frontend_url: str = "http://localhost:3000"
+    
+    # Rate limiting
+    rate_limit_enabled: bool = True
+    rate_limit_per_minute: int = 10
+    max_failed_login_attempts: int = 5
+    account_lockout_duration_minutes: int = 30
+    
+    # Token expiration
+    email_verification_expire_minutes: int = 60
+    password_reset_expire_minutes: int = 15
+    phone_verification_expire_minutes: int = 10
 
     free_plan_code: str = "free"
     premium_plan_code: str = "pro"
