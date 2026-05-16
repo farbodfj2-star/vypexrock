@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import "../styles/vx-system.css";
+@import "../styles/vx-cinematic.css";
 
 /* Legacy cinema/premium classes remain for older routes; new UI uses vx-* in vx-system.css */
 
