@@ -10,6 +10,7 @@ import {
   ActRisk,
   ActInvitation,
 } from "@/components/vx/cinematic-acts";
+import { CinematicBootstrap } from "@/components/vx/cinematic-bootstrap";
 import { CinematicPreloader } from "@/components/vx/cinematic-preloader";
 import { CinematicSceneBreak } from "@/components/vx/cinematic-scene-break";
 import { useMarketStream } from "@/hooks/use-market-stream";
@@ -31,7 +32,11 @@ export default function HomePage() {
 
   return (
     <div className="cinematic-film">
+      {/* preloader (1.4s) */}
       <CinematicPreloader />
+
+      {/* engine layers — smooth scroll, ambience canvas, post-fx, phase HUD */}
+      <CinematicBootstrap />
 
       {/* Act 0 — opening, mystery, hero */}
       <CinematicHero rows={rows} />
@@ -39,31 +44,22 @@ export default function HomePage() {
       {/* breath */}
       <CinematicSceneBreak label="Act I · the silence before" />
 
-      {/* Act I — silence becomes signal (typography breathes) */}
       <ActSilenceBecomesSignal />
 
-      {/* breath */}
       <CinematicSceneBreak label="Act II · liquidity is gravity" />
 
-      {/* Act II — liquidity vision (full-bleed canvas, no card) */}
       <ActLiquidityVision />
 
-      {/* breath */}
       <CinematicSceneBreak label="Act III · timeframes lock" />
 
-      {/* Act III — multi-timeframe orbit (clean geometry) */}
       <ActOrbit />
 
-      {/* breath */}
       <CinematicSceneBreak label="Act IV · discipline by design" />
 
-      {/* Act IV — risk engine (cinematic numbers) */}
       <ActRisk />
 
-      {/* breath */}
       <CinematicSceneBreak label="final frame" />
 
-      {/* Act V — invitation (not pricing cards) */}
       <ActInvitation />
     </div>
   );

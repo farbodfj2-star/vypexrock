@@ -1134,3 +1134,270 @@ body:has(.cinematic-film) .vx-app-main--landing {
   padding: 0 !important;
   gap: 0 !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   POST-FX OVERLAY — chromatic aberration, bloom, lens breathing
+   ═══════════════════════════════════════════════════════════════════ */
+.cine-postfx {
+  /* the layer itself is transparent; its children carry the effects */
+}
+
+.cine-postfx__breathe {
+  transform: scale(var(--breathe, 1));
+  transform-origin: center;
+  transition: transform 0.05s linear;
+  will-change: transform;
+}
+
+/* Chromatic aberration — RGB split visible on edges during fast scroll */
+.cine-postfx__aberration {
+  --ab-x: 0px;
+  background:
+    radial-gradient(ellipse 100% 100% at 50% 50%, transparent 50%, rgba(255, 0, 80, 0.05) 100%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, transparent 50%, rgba(0, 200, 255, 0.05) 100%);
+  background-size:
+    calc(100% + var(--ab-x)) 100%,
+    calc(100% - var(--ab-x)) 100%;
+  background-position: left center, right center;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.2s linear;
+}
+
+/* Soft bloom — adds halo around bright areas */
+.cine-postfx__bloom {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 35%, rgba(125, 211, 252, 0.04), transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 80%, rgba(139, 92, 246, 0.03), transparent 70%);
+  mix-blend-mode: screen;
+}
+
+/* Scanlines — extremely faint horizontal CRT lines */
+.cine-postfx__scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 2px,
+    rgba(255, 255, 255, 0.012) 2px,
+    rgba(255, 255, 255, 0.012) 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.7;
+  animation: cine-scan-shift 7s linear infinite;
+}
+
+@keyframes cine-scan-shift {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 3px; }
+}
+
+/* Vignette — focus pull during fast scroll (intensifies via JS in future) */
+.cine-postfx__vignette {
+  background: radial-gradient(
+    ellipse 110% 90% at 50% 50%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.35) 90%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+/* Atmospheric haze — subtle volumetric fog drifting */
+.cine-postfx__haze {
+  background:
+    radial-gradient(ellipse 60% 30% at 30% 70%, rgba(125, 211, 252, 0.025), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 75% 30%, rgba(139, 92, 246, 0.02), transparent 70%);
+  filter: blur(40px);
+  animation: cine-haze-drift 30s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes cine-haze-drift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(-1.5%, 0.8%); }
+  66% { transform: translate(1.2%, -0.6%); }
+}
+
+/* Rare signal distortion — flickers on every ~12s */
+.cine-postfx__distort {
+  background: linear-gradient(
+    180deg,
+    transparent 49.7%,
+    rgba(125, 211, 252, 0.18) 49.9%,
+    rgba(125, 211, 252, 0.2) 50%,
+    rgba(125, 211, 252, 0.18) 50.1%,
+    transparent 50.3%
+  );
+  background-size: 100% 100%;
+  opacity: 0;
+  animation: cine-glitch 18s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes cine-glitch {
+  0%, 95%, 100% { opacity: 0; transform: translateY(0); }
+  95.5% { opacity: 0.9; transform: translateY(20%); }
+  96% { opacity: 0.4; transform: translateY(-15%); }
+  96.5% { opacity: 0.7; transform: translateY(40%); }
+  97% { opacity: 0; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   AMBIENCE CANVAS — ensure it sits behind everything but body
+   ═══════════════════════════════════════════════════════════════════ */
+.cine-ambience {
+  z-index: 1;
+}
+
+body:has(.cinematic-film) {
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SMOOTH-SCROLL DRIVEN PARALLAX HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
+.cine-parallax-bg {
+  /* used inside acts: translates slower than scroll */
+  transform: translate3d(0, calc((var(--cine-y, 0px) - var(--cine-anchor, 0px)) * -0.06), 0);
+  will-change: transform;
+}
+
+.cine-parallax-mid {
+  transform: translate3d(0, calc((var(--cine-y, 0px) - var(--cine-anchor, 0px)) * -0.12), 0);
+  will-change: transform;
+}
+
+.cine-parallax-fg {
+  transform: translate3d(0, calc((var(--cine-y, 0px) - var(--cine-anchor, 0px)) * -0.22), 0);
+  will-change: transform;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PHASE-AWARE TYPOGRAPHY (for 5-phase opening)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* phase eyebrows above the title */
+.cinematic-phase-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: ui-monospace, "SF Mono", "Geist Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.7);
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.cinematic-phase-eyebrow__bar {
+  display: inline-block;
+  width: 36px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.8));
+}
+
+/* mask reveal — text wipes in from below */
+.cinematic-mask-reveal {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.cinematic-mask-reveal > span {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: cine-mask-up 1.4s var(--ease-glide, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+}
+
+@keyframes cine-mask-up {
+  to { transform: translateY(0); }
+}
+
+/* split-letter reveal — for film-title moments */
+.cinematic-split-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(30%);
+  animation: cine-split-letter 0.9s var(--ease-glide, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+}
+
+@keyframes cine-split-letter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PHASE INDICATOR — tiny corner HUD that shows current phase
+   ═══════════════════════════════════════════════════════════════════ */
+.cinematic-phase-hud {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 999px;
+  background: rgba(2, 4, 11, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.7);
+  pointer-events: none;
+  transition: opacity 0.6s var(--ease-cine, cubic-bezier(0.22, 0.61, 0.36, 1));
+}
+
+.cinematic-phase-hud__rec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cinematic-phase-hud__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f43f5e;
+  box-shadow: 0 0 8px #f43f5e;
+  animation: cine-rec-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes cine-rec-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.cinematic-phase-hud__label {
+  color: rgba(125, 211, 252, 0.85);
+}
+
+.cinematic-phase-hud__sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* hidden on small screens */
+@media (max-width: 720px) {
+  .cinematic-phase-hud { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   IDLE BREATHING for orbs — when no scroll/mouse, still alive
+   ═══════════════════════════════════════════════════════════════════ */
+.cinematic-orb-soft {
+  animation: cine-orb-idle 11s ease-in-out infinite;
+}
+
+@keyframes cine-orb-idle {
+  0%, 100% { filter: blur(50px); }
+  50% { filter: blur(60px); }
+}

@@ -9,18 +9,28 @@ type CinematicHeroProps = {
 };
 
 /**
- * Cinematic Hero — A movie opening, not a dashboard.
+ * Cinematic Hero — A directed 10-second opening sequence.
  *
- * Choreography (driven by intro-time AND scroll-progress):
- *   t = 0.00  total darkness, distant pulse breathing
- *   t = 0.20  ambient particles drift in, faint horizon glow
- *   t = 0.40  brand whisper — tiny mark only
- *   t = 0.55  title fades up letter-by-letter
- *   t = 0.75  subtitle, then chart materialises
- *   t = 0.95  CTAs and scroll hint
+ * 5-PHASE TIMELINE (10s total)
+ * ----------------------------
+ *   PHASE 0 / 0.0 – 1.4s   total darkness · ambient particles drift
+ *   PHASE 1 / 1.4 – 3.0s   faint market signals emerge (data flickers, scanner lines)
+ *   PHASE 2 / 3.0 – 5.2s   holographic systems activate (chart materializes through fog)
+ *   PHASE 3 / 5.2 – 7.0s   AI overlays bloom (HUD + readout)
+ *   PHASE 4 / 7.0 – 10.0s  full trading machine awakens (title + CTA)
  *
- * Then scroll takes over and reveals the AI overlays.
+ * After the intro, scroll progress drives further reveals.
  */
+const PHASES = [
+  { key: "darkness", t0: 0.0, t1: 0.14, label: "PHASE 01 · DARKNESS" },
+  { key: "signals", t0: 0.14, t1: 0.3, label: "PHASE 02 · SIGNAL EMERGENCE" },
+  { key: "holo", t0: 0.3, t1: 0.52, label: "PHASE 03 · HOLOGRAPHIC ACTIVATION" },
+  { key: "ai", t0: 0.52, t1: 0.7, label: "PHASE 04 · AI INTELLIGENCE" },
+  { key: "awake", t0: 0.7, t1: 1.0, label: "PHASE 05 · MACHINE AWAKE" },
+];
+
+const INTRO_MS = 10_000;
+
 export function CinematicHero({ rows }: CinematicHeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -30,23 +40,32 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
   const [, force] = useState(0);
 
-  // Cinematic intro timeline — 4.5s film opening
+  // Cinematic intro timeline
   useEffect(() => {
     setMounted(true);
+    // Skip intro on subsequent visits in the same session for power users
+    const cached = typeof window !== "undefined" ? sessionStorage.getItem("vx-intro-played") : null;
+    if (cached === "1") {
+      setIntro(1);
+      return;
+    }
     const start = performance.now();
-    const DURATION = 4500;
     let raf = 0;
     const step = (now: number) => {
-      const t = Math.min(1, (now - start) / DURATION);
-      const eased = 1 - Math.pow(1 - t, 2.2);
+      const t = Math.min(1, (now - start) / INTRO_MS);
+      // ease-out — accelerate slowly, slow into final position
+      const eased = 1 - Math.pow(1 - t, 1.6);
       setIntro(eased);
       if (t < 1) raf = requestAnimationFrame(step);
+      else {
+        try { sessionStorage.setItem("vx-intro-played", "1"); } catch {}
+      }
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Scroll progress (only takes effect after intro completes)
+  // Scroll progress
   useEffect(() => {
     let raf = 0;
     const onScroll = () => {
@@ -66,7 +85,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
     };
   }, []);
 
-  // Mouse parallax — adds expensive feel
+  // Mouse parallax
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       mouseRef.current = {
@@ -100,7 +119,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
     let frame = 0;
     let stopped = false;
 
-    const candles = generateCinematicCandles(110);
+    const candles = generateCinematicCandles(120);
     const pricesAll = candles.flatMap((c) => [c.high, c.low]);
     const minP = Math.min(...pricesAll);
     const maxP = Math.max(...pricesAll);
@@ -115,8 +134,9 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
       const h = rect.height;
       ctx.clearRect(0, 0, w, h);
 
-      // chart materialises only after intro reaches ~0.7
-      const chartReveal = smoothstep(0.7, 1.0, intro) * (1 - smoothstep(0.85, 1, progress) * 0.5);
+      // Chart materializes during phase 2 (holo)
+      const chartReveal =
+        smoothstep(0.3, 0.6, intro) * (1 - smoothstep(0.85, 1, progress) * 0.5);
       if (chartReveal <= 0) return;
 
       const priceY = (price: number) => {
@@ -125,7 +145,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         return top + (bottom - top) * (1 - (price - minP + pad) / range);
       };
 
-      // ── ATMOSPHERIC FOG (volumetric) ──────────────────
+      // ── Volumetric fog ──
       const fog = ctx.createRadialGradient(w / 2, h * 0.55, 20, w / 2, h * 0.55, w * 0.7);
       fog.addColorStop(0, `rgba(56, 189, 248, ${0.07 * chartReveal})`);
       fog.addColorStop(0.4, `rgba(139, 92, 246, ${0.04 * chartReveal})`);
@@ -133,7 +153,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
       ctx.fillStyle = fog;
       ctx.fillRect(0, 0, w, h);
 
-      // ── PERSPECTIVE FLOOR GRID ─────────────────────────
+      // ── Perspective floor grid ──
       ctx.save();
       ctx.globalAlpha = 0.12 * chartReveal;
       ctx.strokeStyle = "rgba(125, 211, 252, 0.5)";
@@ -148,7 +168,6 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         ctx.lineTo(w, y);
         ctx.stroke();
       }
-      // perspective verticals
       for (let i = -10; i <= 10; i++) {
         const t = i / 10;
         ctx.globalAlpha = 0.07 * chartReveal;
@@ -159,7 +178,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
       }
       ctx.restore();
 
-      // ── LIQUIDITY ZONES — soft glowing bands ──────────
+      // ── Liquidity zones ──
       const liqZones = [
         { y: priceY(minP + range * 0.78), color: "110, 231, 183", scrollGate: 0.05 },
         { y: priceY(minP + range * 0.32), color: "253, 164, 175", scrollGate: 0.12 },
@@ -189,7 +208,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         ctx.restore();
       });
 
-      // ── CANDLES — sequenced reveal with depth fade ────
+      // ── Candles ──
       const cw = (w / candles.length) * 0.55;
       const cs = w / candles.length;
       const candlesShown = Math.floor(candles.length * Math.min(1, chartReveal * 1.05));
@@ -204,11 +223,9 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         const hy = priceY(c.high);
         const ly = priceY(c.low);
 
-        // distance fade — far candles are misty
         const distFade = i < candles.length * 0.18 ? Math.pow(i / (candles.length * 0.18), 1.4) : 1;
         const localOpacity = chartReveal * distFade;
 
-        // wick
         ctx.save();
         ctx.globalAlpha = 0.65 * localOpacity;
         ctx.strokeStyle = isUp ? "rgba(110, 231, 183, 0.85)" : "rgba(252, 165, 165, 0.85)";
@@ -218,7 +235,6 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         ctx.lineTo(x, ly);
         ctx.stroke();
 
-        // body — bloom intensifies at the right edge
         const edgeBoost = i > candles.length - 8 ? 1 + (i - (candles.length - 8)) * 0.18 : 1;
         ctx.shadowColor = isUp ? "rgba(16, 185, 129, 0.55)" : "rgba(244, 63, 94, 0.55)";
         ctx.shadowBlur = 14 * edgeBoost;
@@ -230,7 +246,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         ctx.restore();
       }
 
-      // ── AI PATH PREDICTION — flowing future ──────────
+      // ── AI prediction path ──
       const pathReveal = chartReveal * smoothstep(0.18, 0.42, progress);
       if (pathReveal > 0 && candlesShown > 0) {
         const last = candles[Math.min(candlesShown - 1, candles.length - 1)];
@@ -259,7 +275,6 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         ctx.setLineDash([]);
         ctx.restore();
 
-        // pulsing target
         const tx = w * 0.93;
         const ty = startY - 70;
         const pulse = (Math.sin(frame * 0.05) + 1) / 2;
@@ -278,22 +293,6 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         ctx.restore();
       }
 
-      // ── DUST PARTICLES (atmospheric) ───────────────────
-      ctx.save();
-      const particleCount = 32;
-      for (let i = 0; i < particleCount; i++) {
-        const seed = i * 47.3;
-        const x = ((seed * 13 + frame * 0.3) % w);
-        const y = (seed * 19 + Math.sin(frame * 0.005 + i) * 30) % h;
-        const size = 0.5 + Math.sin(frame * 0.02 + i) * 0.4;
-        const opacity = (Math.sin(frame * 0.01 + i * 1.3) + 1) / 2;
-        ctx.fillStyle = `rgba(186, 230, 253, ${opacity * 0.4 * chartReveal})`;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-
       requestAnimationFrame(tick);
     };
 
@@ -305,28 +304,31 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
     };
   }, [intro, progress]);
 
-  // ─── INTRO + SCROLL CHOREOGRAPHY ────────────────────────────
-  // intro drives the first 4.5s. scroll then takes the page deeper.
-  // After intro is complete, scroll progress is the only driver.
+  // ─── PHASE-AWARE OPACITIES ──────────────────────────────────
   const introOnly = (a: number, b: number) => smoothstep(a, b, intro);
 
   const stage = {
-    mark: introOnly(0.18, 0.38) * (1 - smoothstep(0.85, 1.0, progress)),
-    title: introOnly(0.4, 0.72) * (1 - smoothstep(0.85, 1.0, progress)),
-    subtitle: introOnly(0.62, 0.88) * (1 - smoothstep(0.6, 0.9, progress)),
-    chart: introOnly(0.7, 1.0),
-    cta: introOnly(0.85, 1.0) * (1 - smoothstep(0.5, 0.8, progress)),
-    scrollHint: introOnly(0.92, 1.0) * (1 - smoothstep(0.0, 0.05, progress)),
-    ai: smoothstep(0.05, 0.3, progress) * intro,
-    signal: smoothstep(0.3, 0.55, progress) * intro,
+    // Phase 1: emergent signals (pre-title atmosphere only)
+    earlyAmbience: introOnly(0.05, 0.25),
+    // Phase 2-3: holo & AI
+    chart: introOnly(0.3, 0.6),
+    // Phase 3: AI overlays
+    ai: smoothstep(0.05, 0.3, progress) * smoothstep(0.5, 0.75, intro),
+    signal: smoothstep(0.3, 0.55, progress) * smoothstep(0.6, 0.85, intro),
+    // Phase 4: title comes alive
+    eyebrow: introOnly(0.55, 0.72) * (1 - smoothstep(0.85, 1.0, progress)),
+    title: introOnly(0.6, 0.85) * (1 - smoothstep(0.85, 1.0, progress)),
+    subtitle: introOnly(0.78, 0.95) * (1 - smoothstep(0.6, 0.9, progress)),
+    cta: introOnly(0.88, 1.0) * (1 - smoothstep(0.5, 0.8, progress)),
+    scrollHint: introOnly(0.95, 1.0) * (1 - smoothstep(0.0, 0.05, progress)),
   };
 
-  // mouse parallax offsets
+  // current phase label for the HUD
+  const currentPhase = PHASES.find((p) => intro >= p.t0 && intro < p.t1) ?? PHASES[PHASES.length - 1];
+
+  // mouse parallax
   const mx = (mouseRef.current.x - 0.5) * 30;
   const my = (mouseRef.current.y - 0.5) * 18;
-
-  // dynamic title — switches mid-scroll for emotional impact
-  const titleAccent = progress > 0.35 ? "is a frequency." : "speaks first.";
 
   return (
     <section
@@ -343,7 +345,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
           className="cinematic-nebula pointer-events-none absolute inset-0"
           aria-hidden
           style={{
-            opacity: 0.35 + intro * 0.5 + stage.chart * 0.15,
+            opacity: 0.1 + intro * 0.7 + stage.chart * 0.15,
             transform: `translate(${mx * 0.3}px, ${my * 0.3}px) scale(${1 + intro * 0.04})`,
           }}
         />
@@ -351,25 +353,25 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
         {/* layer 2 — vignette */}
         <div className="cinematic-vignette pointer-events-none absolute inset-0" aria-hidden />
 
-        {/* layer 3 — distant scanner sweep */}
+        {/* layer 3 — distant scanner sweep (only after phase 1) */}
         <div
           className="cinematic-scanner pointer-events-none absolute inset-0"
           aria-hidden
-          style={{ opacity: 0.25 + intro * 0.3 + stage.ai * 0.25 }}
+          style={{ opacity: 0.05 + introOnly(0.14, 0.4) * 0.45 + stage.ai * 0.2 }}
         />
 
         {/* layer 4 — film grain */}
         <div className="cinematic-grain pointer-events-none absolute inset-0" aria-hidden />
 
-        {/* layer 5 — ambient orbs (parallax) */}
+        {/* layer 5 — ambient orbs */}
         <div className="pointer-events-none absolute inset-0" aria-hidden>
           <div
             className="cinematic-orb-soft"
             style={{
               left: "12%",
               top: "18%",
-              opacity: 0.3 + intro * 0.4,
-              transform: `translate(${mx * 0.5}px, ${my * 0.4 + (progress - 0.5) * -60}px) scale(${0.85 + intro * 0.2})`,
+              opacity: 0.12 + introOnly(0.05, 0.6) * 0.55,
+              transform: `translate(${mx * 0.5}px, ${my * 0.4 + (progress - 0.5) * -60}px) scale(${0.8 + intro * 0.25})`,
             }}
           />
           <div
@@ -377,8 +379,8 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
             style={{
               right: "8%",
               top: "22%",
-              opacity: 0.25 + intro * 0.35,
-              transform: `translate(${-mx * 0.6}px, ${-my * 0.5 + (progress - 0.5) * 40}px) scale(${0.85 + intro * 0.2})`,
+              opacity: 0.1 + introOnly(0.18, 0.7) * 0.5,
+              transform: `translate(${-mx * 0.6}px, ${-my * 0.5 + (progress - 0.5) * 40}px) scale(${0.8 + intro * 0.25})`,
             }}
           />
           <div
@@ -386,23 +388,23 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
             style={{
               left: "50%",
               bottom: "8%",
-              opacity: 0.25 + stage.signal * 0.5,
+              opacity: 0.1 + stage.signal * 0.55,
               transform: `translate(calc(-50% + ${mx * 0.3}px), ${(progress - 0.5) * -30}px)`,
             }}
           />
         </div>
 
-        {/* layer 6 — chart canvas (full bleed, no card) */}
+        {/* layer 6 — chart canvas */}
         <canvas
           ref={canvasRef}
           className="absolute inset-0 h-full w-full"
           style={{
             opacity: stage.chart,
-            transform: `translate(${mx * 0.15}px, ${my * 0.1}px) scale(${0.9 + stage.chart * 0.1})`,
+            transform: `translate(${mx * 0.15}px, ${my * 0.1}px) scale(${0.92 + stage.chart * 0.08})`,
           }}
         />
 
-        {/* layer 7 — lens flare drifting with progress */}
+        {/* layer 7 — lens flare */}
         <div
           className="cinematic-lens-flare pointer-events-none absolute"
           aria-hidden
@@ -423,7 +425,7 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
           <CinematicAIReadout progress={progress} mounted={mounted} />
         </div>
 
-        {/* layer 9 — signal lock (final stage) */}
+        {/* layer 9 — signal lock */}
         <div
           className="pointer-events-none absolute right-[6%] top-[26%] hidden md:block"
           style={{
@@ -436,32 +438,47 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
           <CinematicSignalLock progress={progress} />
         </div>
 
-        {/* layer 10 — foreground content (the only "UI" allowed) */}
+        {/* layer 10 — foreground content */}
         <div className="relative z-10 mx-auto flex h-full max-w-[1400px] flex-col items-center justify-center px-6 text-center">
+          {/* tiny phase eyebrow */}
           <div
-            className="cinematic-mark"
+            className="cinematic-phase-eyebrow"
             style={{
-              opacity: stage.mark,
-              transform: `translateY(${(1 - stage.mark) * 14}px)`,
+              opacity: stage.eyebrow,
+              transform: `translateY(${(1 - stage.eyebrow) * 14}px)`,
             }}
+            aria-hidden
           >
-            <span className="cinematic-mark-dot" />
-            <span>Vypexrock — Institutional Intelligence</span>
+            <span className="cinematic-phase-eyebrow__bar" />
+            <span>{currentPhase.label}</span>
+            <span className="cinematic-phase-eyebrow__bar" />
           </div>
 
+          {/* hero title — large, breathing, expensive */}
           <h1
             className="cinematic-title mt-8"
             style={{
               opacity: stage.title,
-              letterSpacing: `${-0.045 + (1 - stage.title) * 0.012}em`,
-              transform: `translateY(${(1 - stage.title) * 32}px) translate(${mx * 0.06}px, 0)`,
+              letterSpacing: `${-0.045 + (1 - stage.title) * 0.02}em`,
+              transform: `translateY(${(1 - stage.title) * 36}px) translate(${mx * 0.06}px, 0)`,
             }}
           >
-            <span className="cinematic-title-line">The market</span>
-            <span className="cinematic-title-line cinematic-title-line--accent">
-              {titleAccent}
+            <SplitTitle line="The market" delay={0} active={stage.title > 0.05} />
+            <span
+              className="cinematic-title-line cinematic-title-line--accent"
+              style={{
+                opacity: smoothstep(0.7, 0.92, intro),
+                transition: "opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            >
+              {progress > 0.35 ? "is a frequency." : "speaks first."}
             </span>
-            <span className="cinematic-title-line cinematic-title-line--quiet">We listen.</span>
+            <SplitTitle
+              line="We listen."
+              delay={1.0}
+              active={stage.title > 0.4}
+              quiet
+            />
           </h1>
 
           <p
@@ -508,7 +525,47 @@ export function CinematicHero({ rows }: CinematicHeroProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// AI READOUT — appears like a HUD in the air
+// SPLIT TITLE — letter-by-letter mask reveal
+// ─────────────────────────────────────────────────────────────────
+function SplitTitle({
+  line,
+  delay = 0,
+  active,
+  quiet,
+}: {
+  line: string;
+  delay?: number;
+  active: boolean;
+  quiet?: boolean;
+}) {
+  if (!active) {
+    return (
+      <span
+        className={`cinematic-title-line${quiet ? " cinematic-title-line--quiet" : ""}`}
+        style={{ opacity: 0 }}
+        aria-hidden
+      >
+        {line}
+      </span>
+    );
+  }
+  return (
+    <span className={`cinematic-title-line${quiet ? " cinematic-title-line--quiet" : ""}`}>
+      {line.split("").map((ch, i) => (
+        <span
+          key={i}
+          className="cinematic-split-letter"
+          style={{ animationDelay: `${delay + i * 0.04}s` }}
+        >
+          {ch === " " ? "\u00A0" : ch}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AI READOUT
 // ─────────────────────────────────────────────────────────────────
 function CinematicAIReadout({ progress, mounted }: { progress: number; mounted: boolean }) {
   const phrases = useMemo(
@@ -546,7 +603,7 @@ function CinematicAIReadout({ progress, mounted }: { progress: number; mounted: 
 }
 
 // ─────────────────────────────────────────────────────────────────
-// SIGNAL LOCK — quiet HUD
+// SIGNAL LOCK
 // ─────────────────────────────────────────────────────────────────
 function CinematicSignalLock({ progress }: { progress: number }) {
   const conf = Math.round(72 + Math.min(20, (progress - 0.3) * 80));
