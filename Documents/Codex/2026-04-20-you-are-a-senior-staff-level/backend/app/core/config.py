@@ -111,8 +111,8 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     
     # OAuth settings
-    google_client_id: str | None = None
-    google_client_secret: str | None = None
+    google_client_id: str | None = Field(default=None)
+    google_client_secret: str | None = Field(default=None)
     google_redirect_uri: str = Field(
         default="http://localhost:8000/api/v1/auth/google/callback",
         description="Google OAuth redirect URI"

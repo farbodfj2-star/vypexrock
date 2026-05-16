@@ -62,24 +62,6 @@ export function SocialAuthButtons({ onEmailClick, mode = "login" }: SocialAuthBu
           disabled={loading !== null}
         />
         
-        <SocialButton
-          provider="github"
-          icon={<Github className="h-5 w-5" />}
-          label="Continue with GitHub"
-          onClick={() => handleSocialAuth("github")}
-          loading={loading === "github"}
-          disabled={loading !== null}
-        />
-        
-        <SocialButton
-          provider="apple"
-          icon={<AppleIcon />}
-          label="Continue with Apple"
-          onClick={() => handleSocialAuth("apple")}
-          loading={loading === "apple"}
-          disabled={loading !== null}
-        />
-        
         {onEmailClick && (
           <SocialButton
             provider="email"
