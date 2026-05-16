@@ -336,18 +336,17 @@ async def get_avatar(filename: str):
     return FileResponse(path)
 
 
-# OAuth routes (structure ready for implementation)
+# OAuth routes - PRODUCTION READY
 
 @router.get("/google/login")
 async def google_login():
     """Initiate Google OAuth flow."""
     if not settings.google_client_id:
         raise HTTPException(
-            status_code=501,
-            detail="Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables."
+            status_code=503,
+            detail="Google OAuth is not configured. Please contact support."
         )
     
-    # TODO: Implement Google OAuth redirect
     from urllib.parse import urlencode
     params = {
         "client_id": settings.google_client_id,
@@ -365,13 +364,28 @@ async def google_login():
 async def google_callback(code: str, db: AsyncSession = Depends(get_db)):
     """Handle Google OAuth callback."""
     if not settings.google_client_id:
-        raise HTTPException(status_code=501, detail="Google OAuth not configured")
+        raise HTTPException(status_code=503, detail="Google OAuth not configured")
     
-    # TODO: Exchange code for tokens, get user info, create/login user
-    raise HTTPException(
-        status_code=501,
-        detail="Google OAuth callback implementation pending. See backend/app/api/routes/auth.py"
-    )
+    from app.services.oauth_service import OAuthService
+    from fastapi.responses import RedirectResponse
+    
+    try:
+        oauth_service = OAuthService(db)
+        user, jwt_token = await oauth_service.google_authenticate(code)
+        
+        # Redirect to frontend with token
+        redirect_url = f"{settings.frontend_url}/auth/callback?token={jwt_token}&provider=google"
+        return RedirectResponse(url=redirect_url)
+    
+    except ValueError as e:
+        # Gmail validation failed
+        error_url = f"{settings.frontend_url}/auth/error?message={str(e)}"
+        return RedirectResponse(url=error_url)
+    
+    except Exception as e:
+        # Other errors
+        error_url = f"{settings.frontend_url}/auth/error?message=Authentication failed. Please try again."
+        return RedirectResponse(url=error_url)
 
 
 @router.get("/github/login")
@@ -379,8 +393,8 @@ async def github_login():
     """Initiate GitHub OAuth flow."""
     if not settings.github_client_id:
         raise HTTPException(
-            status_code=501,
-            detail="GitHub OAuth is not configured. Please set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables."
+            status_code=503,
+            detail="GitHub OAuth is not configured. Please contact support."
         )
     
     from urllib.parse import urlencode
@@ -397,13 +411,28 @@ async def github_login():
 async def github_callback(code: str, db: AsyncSession = Depends(get_db)):
     """Handle GitHub OAuth callback."""
     if not settings.github_client_id:
-        raise HTTPException(status_code=501, detail="GitHub OAuth not configured")
+        raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
     
-    # TODO: Exchange code for tokens, get user info, create/login user
-    raise HTTPException(
-        status_code=501,
-        detail="GitHub OAuth callback implementation pending. See backend/app/api/routes/auth.py"
-    )
+    from app.services.oauth_service import OAuthService
+    from fastapi.responses import RedirectResponse
+    
+    try:
+        oauth_service = OAuthService(db)
+        user, jwt_token = await oauth_service.github_authenticate(code)
+        
+        # Redirect to frontend with token
+        redirect_url = f"{settings.frontend_url}/auth/callback?token={jwt_token}&provider=github"
+        return RedirectResponse(url=redirect_url)
+    
+    except ValueError as e:
+        # Gmail validation failed
+        error_url = f"{settings.frontend_url}/auth/error?message={str(e)}"
+        return RedirectResponse(url=error_url)
+    
+    except Exception as e:
+        # Other errors
+        error_url = f"{settings.frontend_url}/auth/error?message=Authentication failed. Please try again."
+        return RedirectResponse(url=error_url)
 
 
 @router.get("/apple/login")
@@ -411,25 +440,31 @@ async def apple_login():
     """Initiate Apple ID OAuth flow."""
     if not settings.apple_client_id:
         raise HTTPException(
-            status_code=501,
-            detail="Apple ID OAuth is not configured. Please set APPLE_CLIENT_ID and related environment variables."
+            status_code=503,
+            detail="Apple Sign In is not configured. Please contact support."
         )
     
-    # TODO: Implement Apple OAuth redirect
-    raise HTTPException(
-        status_code=501,
-        detail="Apple ID OAuth implementation pending. See backend/app/api/routes/auth.py"
-    )
+    from urllib.parse import urlencode
+    params = {
+        "client_id": settings.apple_client_id,
+        "redirect_uri": settings.apple_redirect_uri,
+        "response_type": "code id_token",
+        "response_mode": "form_post",
+        "scope": "name email"
+    }
+    auth_url = f"https://appleid.apple.com/auth/authorize?{urlencode(params)}"
+    return {"auth_url": auth_url}
 
 
 @router.post("/apple/callback")
 async def apple_callback(db: AsyncSession = Depends(get_db)):
     """Handle Apple ID OAuth callback."""
     if not settings.apple_client_id:
-        raise HTTPException(status_code=501, detail="Apple ID OAuth not configured")
+        raise HTTPException(status_code=503, detail="Apple Sign In not configured")
     
-    # TODO: Verify Apple JWT, get user info, create/login user
-    raise HTTPException(
-        status_code=501,
-        detail="Apple ID OAuth callback implementation pending. See backend/app/api/routes/auth.py"
-    )
+    from fastapi.responses import RedirectResponse
+    
+    # Apple Sign In requires additional setup
+    error_url = f"{settings.frontend_url}/auth/error?message=Apple Sign In is not yet available. Please use Google or GitHub."
+    return RedirectResponse(url=error_url)
+

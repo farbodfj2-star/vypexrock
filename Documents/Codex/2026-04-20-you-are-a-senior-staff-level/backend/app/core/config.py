@@ -113,20 +113,32 @@ class Settings(BaseSettings):
     # OAuth settings
     google_client_id: str | None = None
     google_client_secret: str | None = None
-    google_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
+    google_redirect_uri: str = Field(
+        default="http://localhost:8000/api/v1/auth/google/callback",
+        description="Google OAuth redirect URI"
+    )
     
     github_client_id: str | None = None
     github_client_secret: str | None = None
-    github_redirect_uri: str = "http://localhost:8000/api/v1/auth/github/callback"
+    github_redirect_uri: str = Field(
+        default="http://localhost:8000/api/v1/auth/github/callback",
+        description="GitHub OAuth redirect URI"
+    )
     
     apple_client_id: str | None = None
     apple_team_id: str | None = None
     apple_key_id: str | None = None
     apple_private_key: str | None = None
-    apple_redirect_uri: str = "http://localhost:8000/api/v1/auth/apple/callback"
+    apple_redirect_uri: str = Field(
+        default="http://localhost:8000/api/v1/auth/apple/callback",
+        description="Apple OAuth redirect URI"
+    )
     
-    # Frontend URL for email links
-    frontend_url: str = "http://localhost:3000"
+    # Frontend URL for email links and OAuth redirects
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        description="Frontend URL for redirects"
+    )
     
     # Rate limiting
     rate_limit_enabled: bool = True
