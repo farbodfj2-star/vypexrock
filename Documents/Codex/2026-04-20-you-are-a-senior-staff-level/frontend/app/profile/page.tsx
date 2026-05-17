@@ -5,6 +5,7 @@ import { ChangeEvent, useRef, useState } from "react";
 import { BadgeCheck, Camera, Crown, Mail, ShieldCheck, Sparkles, UploadCloud, UserCircle2 } from "lucide-react";
 
 import { apiFetch, resolveApiAssetUrl, uploadUserAvatar } from "@/lib/api";
+import { resolveUserAvatar } from "@/lib/avatar";
 import { useAuthStore } from "@/lib/store";
 import type { User } from "@/types";
 
@@ -20,8 +21,7 @@ export default function ProfilePage() {
   });
 
   const profile = profileQuery.data ?? user;
-  const fallbackAvatarUrl = profile?.email ? `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(profile.email)}` : null;
-  const avatarUrl = resolveApiAssetUrl(profile?.avatar_url) ?? fallbackAvatarUrl;
+  const avatarUrl = resolveApiAssetUrl(profile?.avatar_url) ?? resolveUserAvatar(profile);
 
   async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -54,17 +54,11 @@ export default function ProfilePage() {
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
           <div className="flex flex-col items-center text-center">
             <div className="relative">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={profile?.email ?? "Profile"}
-                  className={`h-32 w-32 rounded-full border border-white/10 bg-white/5 object-cover p-2 shadow-[0_0_44px_rgba(125,211,252,0.16)] transition duration-500 ${avatarPulse ? "scale-105 ring-4 ring-cyan-300/25" : ""}`}
-                />
-              ) : (
-                <div className="grid h-32 w-32 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50">
-                  <UserCircle2 className="h-16 w-16" />
-                </div>
-              )}
+              <img
+                src={avatarUrl}
+                alt={profile?.email ?? "Profile"}
+                className={`h-32 w-32 rounded-full border border-white/10 bg-white/5 object-cover p-2 shadow-[0_0_44px_rgba(125,211,252,0.16)] transition duration-500 ${avatarPulse ? "scale-105 ring-4 ring-cyan-300/25" : ""}`}
+              />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}

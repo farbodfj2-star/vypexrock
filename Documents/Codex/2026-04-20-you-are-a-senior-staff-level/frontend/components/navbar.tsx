@@ -7,6 +7,7 @@ import { Bell, Bot, BrainCircuit, ChevronRight, Crown, Globe2, Home, LineChart, 
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { resolveApiAssetUrl } from "@/lib/api";
+import { resolveUserAvatar } from "@/lib/avatar";
 import { useAuthStore } from "@/lib/store";
 import { VypexrockLogo } from "@/components/vypexrock-logo";
 import { cn } from "@/lib/utils";
@@ -26,8 +27,7 @@ export function Navbar() {
   const pathname = usePathname();
   const isLanding = pathname === "/";
   const { user, clearSession } = useAuthStore();
-  const fallbackAvatarUrl = user?.email ? `https://api.dicebear.com/7.x/glass/svg?seed=${encodeURIComponent(user.email)}` : null;
-  const avatarUrl = resolveApiAssetUrl(user?.avatar_url) ?? fallbackAvatarUrl;
+  const avatarUrl = resolveApiAssetUrl(user?.avatar_url) ?? resolveUserAvatar(user);
   const [utcClock, setUtcClock] = useState("");
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export function Navbar() {
           {user ? (
             <>
               <Link href="/profile" className="vx-btn-ghost hidden items-center gap-2 py-2 sm:inline-flex">
-                {avatarUrl ? <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full" /> : null}
+                <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full border border-white/10 bg-white/5 object-cover" />
                 <span className="max-w-[120px] truncate text-sm">{user.full_name ?? "Member"}</span>
               </Link>
               <button type="button" onClick={clearSession} className="vx-btn-ghost hidden p-2.5 sm:inline-flex" aria-label="Log out">

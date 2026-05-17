@@ -282,8 +282,21 @@ async def verify_phone_number(
 
 
 @router.get("/me", response_model=UserRead)
-async def me(current_user: User = Depends(get_current_active_user)) -> UserRead:
-    """Get current user profile."""
+async def me(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserRead:
+    """Get current user profile.
+
+    Backfills a generated avatar for legacy accounts that were created
+    before the auto-avatar feature shipped, so every user always has a
+    profile picture they can later replace.
+    """
+    if not current_user.avatar_url:
+        from app.services.avatar_service import generate_avatar_url
+        current_user.avatar_url = generate_avatar_url(current_user.email)
+        await db.commit()
+        await db.refresh(current_user)
     return UserRead.model_validate(current_user)
 
 
