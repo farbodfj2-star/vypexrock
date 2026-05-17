@@ -10,6 +10,7 @@ import {
   BrainCircuit,
   ChartCandlestick,
   ChevronRight,
+  Copy,
   Globe2,
   Home,
   LineChart,
@@ -32,11 +33,12 @@ const primaryItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/terminal", label: "Terminal", icon: BrainCircuit },
   { href: "/markets", label: "Markets", icon: Globe2 },
-  { href: "/chart-analyzer", label: "Chart", icon: ScanSearch },
+  { href: "/copy", label: "Copy", icon: Copy },
   { href: "/ai", label: "AI", icon: Bot }
 ];
 
 const moreItems = [
+  { href: "/copy", label: "Copy Trading", icon: Copy, description: "Top 100 traders · positions · win rate · ROI" },
   { href: "/community", label: "Community", icon: Users, description: "AI-ranked public market intelligence" },
   { href: "/journal", label: "Trading Journal", icon: NotebookPen, description: "Save trades, screenshots, notes, and AI reviews" },
   { href: "/watchlist", label: "Watchlist", icon: Star, description: "Saved assets and market focus" },

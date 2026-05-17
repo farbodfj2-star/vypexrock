@@ -16,6 +16,7 @@ const navLinks = [
   { href: "/terminal", label: "Terminal", icon: BrainCircuit },
   { href: "/chart-analyzer", label: "Charts", icon: ScanSearch },
   { href: "/markets", label: "Markets", icon: Globe2 },
+  { href: "/copy", label: "Copy", icon: Users },
   { href: "/ai", label: "AI", icon: Bot },
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/alerts", label: "Alerts", icon: Bell }
