@@ -1,0 +1,218 @@
+/* ─────────────────────────────────────────────────────────────────
+   READABILITY v2 — global text-size pass.
+
+   Goal: nothing on the site is smaller than 11px monospace or 13px sans.
+   Loaded LAST so it overrides everything.
+   ───────────────────────────────────────────────────────────────── */
+
+/* ════════════════════════════════════════════════════════════════════
+   MARKETS PAGE
+   ════════════════════════════════════════════════════════════════════ */
+.markets-page__eyebrow { font-size: 12px !important; }
+.markets-page__title { font-size: clamp(2.6rem, 4.6vw, 3.8rem) !important; }
+.markets-page__sub { font-size: 1.1rem !important; line-height: 1.65 !important; }
+
+.markets-page__stat-label { font-size: 11px !important; }
+.markets-page__stat-value { font-size: 1.55rem !important; }
+
+.markets-page__mood-label { font-size: 11px !important; letter-spacing: 0.32em !important; }
+.markets-page__mood-name { font-size: 1.25rem !important; }
+.markets-page__mood-symbol { font-size: 12px !important; letter-spacing: 0.16em !important; }
+.markets-page__mood-figure span:first-child { font-size: 1.7rem !important; }
+.markets-page__mood-figure span:last-child { font-size: 13px !important; }
+
+.markets-page__filter { font-size: 14px !important; padding: 9px 18px !important; }
+.markets-page__search-input { font-size: 14.5px !important; }
+.markets-page__sort { font-size: 14px !important; padding: 10px 18px !important; }
+
+.markets-page__list-head { font-size: 11px !important; letter-spacing: 0.28em !important; padding: 16px 24px !important; }
+
+.markets-row { padding: 18px 24px !important; }
+.markets-row__name { font-size: 15.5px !important; }
+.markets-row__label { font-size: 12px !important; letter-spacing: 0.06em !important; }
+.markets-row__price { font-size: 15px !important; }
+.markets-row__chg { font-size: 14.5px !important; }
+.markets-row__vol { font-size: 13.5px !important; }
+.markets-row__icon { width: 38px !important; height: 38px !important; font-size: 15px !important; }
+
+/* ── Detail panel ── */
+.market-detail__name { font-size: 1.45rem !important; }
+.market-detail__label { font-size: 12.5px !important; letter-spacing: 0.16em !important; }
+.market-detail__price { font-size: 2.1rem !important; }
+.market-detail__chg { font-size: 14px !important; padding: 6px 13px !important; }
+.market-detail__chg-label { font-size: 11px !important; }
+
+.market-detail__interval { font-size: 13px !important; padding: 8px 15px !important; }
+.market-detail__live { font-size: 11.5px !important; letter-spacing: 0.28em !important; }
+
+.market-detail__stat-label { font-size: 11px !important; letter-spacing: 0.24em !important; }
+.market-detail__stat-value { font-size: 1.3rem !important; }
+
+.market-detail__tech-head { font-size: 12px !important; }
+.market-detail__signal-label { font-size: 12px !important; letter-spacing: 0.14em !important; }
+.market-detail__signal-value { font-size: 14.5px !important; }
+
+.market-detail__about-eyebrow { font-size: 12px !important; }
+.market-detail__about-blurb { font-size: 15px !important; line-height: 1.7 !important; }
+.market-detail__fact-label { font-size: 11px !important; letter-spacing: 0.22em !important; }
+.market-detail__fact-value { font-size: 13.5px !important; }
+.market-detail__trade-list li { font-size: 14.5px !important; line-height: 1.65 !important; }
+
+.market-detail__cta { font-size: 13.5px !important; padding: 14px 22px !important; letter-spacing: 0.14em !important; }
+
+.market-detail__credits-mark { font-size: 1.65rem !important; }
+.market-detail__credits-sub { font-size: 11.5px !important; }
+.market-detail__credits-meta p:first-child { font-size: 11.5px !important; }
+.market-detail__credits-author { font-size: 1.15rem !important; }
+.market-detail__credits-note { font-size: 13px !important; line-height: 1.6 !important; }
+
+.markets-page__placeholder-eyebrow { font-size: 12px !important; }
+.markets-page__placeholder-title { font-size: 1.65rem !important; }
+.markets-page__placeholder-body { font-size: 1.05rem !important; line-height: 1.65 !important; }
+
+.markets-page__footer { padding: 18px 24px !important; font-size: 13px !important; }
+.markets-page__footer-mark { font-size: 1.25rem !important; }
+
+.markets-page__empty { font-size: 14px !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   COPY TRADING
+   ════════════════════════════════════════════════════════════════════ */
+.copy-page__eyebrow { font-size: 12px !important; }
+.copy-page__title { font-size: clamp(2.6rem, 4.6vw, 3.8rem) !important; }
+.copy-page__sub { font-size: 1.1rem !important; line-height: 1.65 !important; }
+
+.copy-page__hero-stat-label { font-size: 11px !important; }
+.copy-page__hero-stat-value { font-size: 1.55rem !important; }
+
+.copy-podium__rank { font-size: 13px !important; padding: 6px 16px !important; }
+.copy-podium__handle { font-size: 1.45rem !important; }
+.copy-podium__country { font-size: 12px !important; letter-spacing: 0.14em !important; }
+.copy-podium__stat-label { font-size: 11px !important; letter-spacing: 0.24em !important; }
+.copy-podium__stat-value { font-size: 1.25rem !important; }
+.copy-podium__cta { font-size: 13px !important; }
+
+.copy-page__filter { font-size: 14px !important; padding: 9px 18px !important; }
+.copy-page__search-input { font-size: 14.5px !important; }
+.copy-page__sort { font-size: 14px !important; padding: 10px 18px !important; }
+
+.copy-page__list-head { font-size: 11px !important; letter-spacing: 0.28em !important; padding: 16px 24px !important; }
+
+.copy-row { padding: 18px 24px !important; }
+.copy-row__rank-num { font-size: 1.15rem !important; }
+.copy-row__tier { font-size: 11px !important; padding: 3px 10px !important; }
+.copy-row__handle { font-size: 15.5px !important; }
+.copy-row__meta { font-size: 12px !important; letter-spacing: 0.04em !important; }
+.copy-row__roi { font-size: 14.5px !important; }
+.copy-row__winrate { font-size: 13px !important; }
+.copy-row__pnl { font-size: 13.5px !important; }
+.copy-row__copiers { font-size: 13px !important; }
+
+/* ── Trader detail panel ── */
+.trader-detail__rank { font-size: 13px !important; }
+.trader-detail__rank-num { font-size: 15px !important; }
+.trader-detail__tier { font-size: 11.5px !important; padding: 3px 10px !important; }
+.trader-detail__country { font-size: 20px !important; }
+.trader-detail__handle { font-size: 2rem !important; }
+.trader-detail__bio { font-size: 14.5px !important; line-height: 1.65 !important; }
+.trader-detail__badge { font-size: 11.5px !important; padding: 5px 11px !important; }
+
+.trader-detail__headline-label { font-size: 11px !important; letter-spacing: 0.24em !important; }
+.trader-detail__headline-value { font-size: 1.45rem !important; }
+.trader-detail__spark-label { font-size: 11px !important; letter-spacing: 0.24em !important; }
+
+.trader-detail__stat-label { font-size: 11px !important; letter-spacing: 0.24em !important; }
+.trader-detail__stat-value { font-size: 1.3rem !important; }
+
+.trader-detail__positions-head { font-size: 12px !important; }
+.trader-detail__positions-row { font-size: 14.5px !important; padding: 16px 0 !important; }
+.trader-detail__positions-row--head { font-size: 11px !important; letter-spacing: 0.22em !important; }
+.trader-detail__pos-icon { width: 34px !important; height: 34px !important; font-size: 13px !important; }
+.trader-detail__pos-symbol-name { font-size: 14.5px !important; letter-spacing: 0.04em !important; }
+.trader-detail__pos-symbol-time { font-size: 11.5px !important; }
+.trader-detail__pos-side-tag { font-size: 12px !important; padding: 4px 11px !important; letter-spacing: 0.16em !important; }
+.trader-detail__pos-leverage { font-size: 13px !important; }
+.trader-detail__pos-size, .trader-detail__pos-margin { font-size: 14px !important; }
+.trader-detail__pos-entry { font-size: 13.5px !important; }
+.trader-detail__pos-pnl-usd { font-size: 14.5px !important; }
+.trader-detail__pos-pnl-pct { font-size: 12px !important; }
+
+.trader-detail__copy-info-head { font-size: 12px !important; }
+.trader-detail__copy-info-label { font-size: 11.5px !important; letter-spacing: 0.22em !important; }
+.trader-detail__copy-info-value { font-size: 1.3rem !important; }
+
+.trader-detail__cta { font-size: 13.5px !important; padding: 14px 22px !important; letter-spacing: 0.14em !important; }
+
+.trader-detail__disclaimer { font-size: 13.5px !important; line-height: 1.6 !important; padding: 16px 18px !important; }
+
+.copy-page__footer { padding: 18px 24px !important; font-size: 13px !important; }
+.copy-page__footer-mark { font-size: 1.25rem !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   SIDEBAR · LIVE DESK / NAV
+   ════════════════════════════════════════════════════════════════════ */
+.vx-sidebar .text-\[10px\],
+.vx-sidebar [class*="text-[10px]"] { font-size: 11.5px !important; }
+
+.vx-sidebar h2 { font-size: 1.05rem !important; }
+
+/* Make every "uppercase tracking-[0.22em]" eyebrow chip readable */
+.vx-eyebrow { font-size: 11.5px !important; letter-spacing: 0.28em !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   CINEMATIC HOME BITS
+   ════════════════════════════════════════════════════════════════════ */
+.cinematic-mark { font-size: 11.5px !important; letter-spacing: 0.34em !important; }
+.cinematic-sub { font-size: clamp(1rem, 1.2vw, 1.1rem) !important; line-height: 1.7 !important; }
+.cinematic-readout { font-size: 11.5px !important; letter-spacing: 0.18em !important; }
+.cinematic-signal-lock__label { font-size: 11px !important; letter-spacing: 0.32em !important; }
+.cinematic-signal-lock__value { font-size: 30px !important; }
+.cinematic-signal-lock__meta { font-size: 11px !important; letter-spacing: 0.18em !important; }
+.cinematic-vision-kicker { font-size: 11px !important; letter-spacing: 0.4em !important; }
+.cinematic-vision-body { font-size: clamp(1rem, 1.15vw, 1.1rem) !important; line-height: 1.7 !important; }
+.cinematic-orbit-core__label { font-size: 11px !important; letter-spacing: 0.3em !important; }
+.cinematic-orbit-node { font-size: 12px !important; letter-spacing: 0.24em !important; }
+.cinematic-number__label { font-size: 11px !important; letter-spacing: 0.28em !important; }
+.cinematic-number__suffix { font-size: 12px !important; letter-spacing: 0.22em !important; }
+.cinematic-invite__eyebrow { font-size: 12px !important; letter-spacing: 0.4em !important; }
+.cinematic-invite__sub { font-size: clamp(1.05rem, 1.3vw, 1.25rem) !important; }
+.cinematic-phase-eyebrow { font-size: 11px !important; letter-spacing: 0.4em !important; }
+
+/* Cinematic CTAs */
+.cinematic-cta { font-size: 13px !important; letter-spacing: 0.18em !important; }
+.cinematic-cta--strong { font-size: 14px !important; }
+.cinematic-cta-quiet { font-size: 12px !important; letter-spacing: 0.2em !important; }
+
+/* Lambo act */
+.cinematic-lambo__kicker { font-size: 11px !important; letter-spacing: 0.42em !important; }
+.cinematic-lambo__phrase { font-size: clamp(1.05rem, 1.35vw, 1.3rem) !important; }
+.cinematic-lambo__hud { font-size: 11px !important; letter-spacing: 0.28em !important; }
+
+/* Ticker tape */
+.cinematic-ticker__item { font-size: 12px !important; }
+.cinematic-rail__label { font-size: 10.5px !important; letter-spacing: 0.36em !important; }
+
+/* Phase HUD */
+.cinematic-phase-hud { font-size: 10.5px !important; letter-spacing: 0.28em !important; }
+
+/* Scene break label */
+.cinematic-scene-break__quote { font-size: 11px !important; letter-spacing: 0.32em !important; }
+
+/* Wordmark sub */
+.cinematic-wordmark__sub { font-size: 10.5px !important; letter-spacing: 0.42em !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   GLOBAL: tiny utility font-size classes site-wide
+   These bump the absolute smallest text without affecting layout.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Tailwind arbitrary utilities used across the codebase */
+[class*="text-\[10px\]"] { font-size: 11.5px !important; }
+[class*="text-\[11px\]"] { font-size: 12px !important; }
+[class*="text-\[9px\]"] { font-size: 11px !important; }
+
+/* Default "text-xs" (0.75rem = 12px) to 13px on dashboards */
+.terminal-page .text-xs,
+.market-detail .text-xs,
+.copy-page .text-xs,
+.markets-page .text-xs { font-size: 13px !important; }
