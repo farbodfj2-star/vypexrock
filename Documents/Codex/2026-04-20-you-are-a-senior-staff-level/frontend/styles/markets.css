@@ -1122,3 +1122,98 @@
   flex-shrink: 0;
   color: rgba(125, 211, 252, 0.7);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   READABILITY PASS — bigger labels, less squint
+   ═══════════════════════════════════════════════════════════════════ */
+.markets-page__eyebrow { font-size: 11px; }
+.markets-page__sub { font-size: 1.05rem; line-height: 1.6; }
+.markets-page__stat-label { font-size: 10px; }
+.markets-page__stat-value { font-size: 1.45rem; }
+
+.markets-page__mood-label { font-size: 10px; }
+.markets-page__mood-name { font-size: 1.15rem; }
+.markets-page__mood-symbol { font-size: 11px; letter-spacing: 0.16em; }
+.markets-page__mood-figure span:first-child { font-size: 1.55rem; }
+.markets-page__mood-figure span:last-child { font-size: 12px; }
+
+.markets-page__filter { font-size: 13px; padding: 8px 16px; }
+.markets-page__search { min-width: 280px; padding: 10px 16px; }
+.markets-page__search-input { font-size: 14px; }
+.markets-page__sort { font-size: 13px; padding: 9px 16px; }
+
+.markets-page__list-head { font-size: 10px; padding: 14px 22px; }
+.markets-row { padding: 16px 22px; }
+.markets-row__name { font-size: 14.5px; }
+.markets-row__label { font-size: 11px; letter-spacing: 0.06em; }
+.markets-row__price { font-size: 14px; }
+.markets-row__chg { font-size: 13.5px; }
+.markets-row__vol { font-size: 13px; }
+.markets-row__icon { width: 36px; height: 36px; font-size: 14px; }
+
+.markets-page__list-body { max-height: clamp(520px, 78vh, 1000px); }
+
+.market-detail__name { font-size: 1.35rem; }
+.market-detail__label { font-size: 11.5px; letter-spacing: 0.16em; }
+.market-detail__price { font-size: 2rem; }
+.market-detail__chg { font-size: 13.5px; padding: 5px 12px; }
+
+.market-detail__interval { font-size: 12px; padding: 7px 14px; }
+.market-detail__live { font-size: 10.5px; }
+
+.market-detail__chart { height: 320px; }
+
+.market-detail__stat-label { font-size: 9.5px; letter-spacing: 0.28em; }
+.market-detail__stat-value { font-size: 1.2rem; }
+
+.market-detail__tech-head { font-size: 11px; }
+.market-detail__signal-label { font-size: 11px; letter-spacing: 0.14em; }
+.market-detail__signal-value { font-size: 13.5px; }
+
+.market-detail__about-eyebrow { font-size: 11px; }
+.market-detail__about-blurb { font-size: 14.5px; line-height: 1.7; }
+.market-detail__fact-label { font-size: 10px; letter-spacing: 0.24em; }
+.market-detail__fact-value { font-size: 12.5px; }
+.market-detail__trade-list li { font-size: 13.5px; line-height: 1.6; }
+
+.market-detail__cta { font-size: 13px; padding: 13px 20px; letter-spacing: 0.14em; }
+
+.market-detail__credits { padding: 22px 24px; }
+.market-detail__credits-mark { font-size: 1.55rem; }
+.market-detail__credits-sub { font-size: 10px; }
+.market-detail__credits-meta p:first-child { font-size: 10px; }
+.market-detail__credits-author { font-size: 1.05rem; }
+.market-detail__credits-note { font-size: 12px; }
+
+.markets-page__footer { padding: 18px 22px; font-size: 12px; }
+.markets-page__footer-mark { font-size: 1.15rem; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FULL-WIDTH LIST — give the leaderboard the whole page
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* On wide screens the detail panel is a fixed width so the list expands */
+@media (min-width: 1280px) {
+  .markets-page__body {
+    grid-template-columns: minmax(0, 1fr) 480px;
+    gap: 22px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .markets-page__body {
+    grid-template-columns: minmax(0, 1fr) 540px;
+    gap: 28px;
+  }
+}
+
+/* Wider list rows on wide screens for breathing room */
+@media (min-width: 1400px) {
+  .markets-page__list-head {
+    grid-template-columns: 2.4fr 0.9fr 0.85fr 0.85fr 36px;
+  }
+  .markets-row {
+    grid-template-columns: 2.4fr 0.9fr 0.85fr 0.85fr 36px;
+  }
+}

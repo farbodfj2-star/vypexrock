@@ -81,7 +81,7 @@ export default function MarketsPage() {
     : null;
 
   return (
-    <div className="markets-page mx-auto w-full max-w-[1440px] px-4 py-6 lg:px-8 lg:py-8">
+    <div className="markets-page mx-auto w-full max-w-none px-4 py-6 lg:px-6 lg:py-8 xl:px-8">
       {/* ── Header ── */}
       <div className="markets-page__head">
         <div>

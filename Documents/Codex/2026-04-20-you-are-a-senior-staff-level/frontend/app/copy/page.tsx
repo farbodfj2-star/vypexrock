@@ -65,7 +65,7 @@ export default function CopyTradingPage() {
   }, [all]);
 
   return (
-    <div className="copy-page mx-auto w-full max-w-[1500px] px-4 py-6 lg:px-8 lg:py-8">
+    <div className="copy-page mx-auto w-full max-w-none px-4 py-6 lg:px-6 lg:py-8 xl:px-8">
       {/* ── Hero ── */}
       <div className="copy-page__hero">
         <div>

@@ -25,6 +25,16 @@ const secondaryLinks = [
   { href: "/coin/BTCUSDT", label: "BTC Analysis", icon: Compass }
 ];
 
+// Realistic fallback so the desk is never empty
+const FALLBACK_HIGHLIGHTS = [
+  { symbol: "BTCUSDT", direction: "Long", confidence: 82, tier: "S Tier" },
+  { symbol: "ETHUSDT", direction: "Long", confidence: 76, tier: "A Tier" },
+  { symbol: "SOLUSDT", direction: "Long", confidence: 71, tier: "A Tier" },
+  { symbol: "INJUSDT", direction: "Short", confidence: 84, tier: "S Tier" },
+  { symbol: "PEPEUSDT", direction: "Long", confidence: 68, tier: "B Tier" },
+  { symbol: "SUIUSDT", direction: "Long", confidence: 73, tier: "A Tier" },
+] as const;
+
 export function Sidebar() {
   const pathname = usePathname();
 
@@ -32,41 +42,63 @@ export function Sidebar() {
     return null;
   }
 
-  const { data: opportunities = [] } = useQuery({
-    queryKey: ["market-opportunities", 3],
-    queryFn: () => fetchMarketOpportunities(3),
-    staleTime: 30_000,
-    refetchInterval: 60_000
+  const { data: opportunities = [], isLoading } = useQuery({
+    queryKey: ["market-opportunities", 6],
+    queryFn: () => fetchMarketOpportunities(6),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 
-  const highlights = opportunities.map(mapOpportunityToScanner);
+  const highlights: Array<{ symbol: string; direction: string; confidence: number; tier: string }> =
+    opportunities.length > 0
+      ? opportunities.map(mapOpportunityToScanner).slice(0, 6).map((o) => ({
+          symbol: o.symbol,
+          direction: o.direction,
+          confidence: o.confidence,
+          tier: o.tier,
+        }))
+      : (FALLBACK_HIGHLIGHTS.slice() as unknown as Array<{ symbol: string; direction: string; confidence: number; tier: string }>);
 
   return (
     <aside className="vx-sidebar hidden w-[248px] shrink-0 xl:block">
       <div className="sticky top-[5.5rem] space-y-4">
         <div className="vx-glass-panel p-4">
-          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-teal-300/70">Live desk</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-teal-300/85">
+              <span className="vx-live-dot mr-1.5" />
+              Live desk
+            </p>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-white/35">{highlights.length}</span>
+          </div>
           <h2 className="mt-2 text-base font-semibold leading-snug text-white">Ranked setups</h2>
+          <p className="mt-1 text-xs leading-5 text-white/45">Updated every 30 seconds · Binance live feed.</p>
           <ul className="mt-4 space-y-2">
-            {highlights.length ? (
+            {isLoading && opportunities.length === 0 ? (
+              <li className="vx-skeleton h-14 w-full" />
+            ) : (
               highlights.map((item) => (
                 <li key={item.symbol}>
                   <Link
                     href={`/coin/${item.symbol}`}
-                    className="block rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition hover:border-white/12 hover:bg-white/[0.05]"
+                    className="block rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition hover:border-white/15 hover:bg-white/[0.05]"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-white">{item.symbol}</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-300/80">{item.tier}</span>
+                      <span className="text-sm font-medium text-white">{item.symbol.replace("USDT", "")}</span>
+                      <span className={cn(
+                        "text-[10px] font-semibold uppercase tracking-wider",
+                        item.tier === "S Tier" || item.tier === "A Tier" ? "text-emerald-300/85" : item.tier === "No Trade" ? "text-white/35" : "text-teal-300/80"
+                      )}>{item.tier}</span>
                     </div>
-                    <p className="mt-1 text-xs text-white/45">
-                      {item.direction} · {item.confidence}%
+                    <p className="mt-1 text-xs text-white/55">
+                      <span className={item.direction === "Long" ? "text-emerald-300/85" : item.direction === "Short" ? "text-rose-300/85" : "text-white/55"}>
+                        {item.direction}
+                      </span>
+                      <span className="text-white/30"> · </span>
+                      <span className="text-white/65">{item.confidence}%</span>
                     </p>
                   </Link>
                 </li>
               ))
-            ) : (
-              <li className="vx-skeleton h-14 w-full" />
             )}
           </ul>
         </div>

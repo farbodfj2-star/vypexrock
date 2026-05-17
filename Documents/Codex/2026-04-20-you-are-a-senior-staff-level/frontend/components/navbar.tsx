@@ -55,9 +55,6 @@ export function Navbar() {
           <Link href="/" className="block min-w-0 shrink-0">
             <VypexrockLogo className="mobile-logo-scale" />
           </Link>
-          {!isLanding ? (
-            <span className="vx-eyebrow hidden lg:inline-flex">Workspace</span>
-          ) : null}
         </div>
 
         <nav className="hidden items-center gap-1 md:flex">

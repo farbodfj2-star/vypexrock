@@ -1092,3 +1092,108 @@
   text-transform: none;
   letter-spacing: 0.04em;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   READABILITY PASS — bigger labels, less squint
+   ═══════════════════════════════════════════════════════════════════ */
+.copy-page__eyebrow { font-size: 11px; }
+.copy-page__sub { font-size: 1.05rem; line-height: 1.6; }
+.copy-page__hero-stat-label { font-size: 10px; }
+.copy-page__hero-stat-value { font-size: 1.45rem; }
+
+.copy-podium { padding: 26px 26px 22px; }
+.copy-podium__rank { font-size: 12px; padding: 5px 14px; }
+.copy-podium__handle { font-size: 1.35rem; }
+.copy-podium__country { font-size: 11px; letter-spacing: 0.14em; }
+.copy-podium__stat-label { font-size: 9.5px; letter-spacing: 0.28em; }
+.copy-podium__stat-value { font-size: 1.15rem; }
+.copy-podium__cta { font-size: 12px; }
+
+.copy-page__filter { font-size: 13px; padding: 8px 16px; }
+.copy-page__search { min-width: 280px; padding: 10px 16px; }
+.copy-page__search-input { font-size: 14px; }
+.copy-page__sort { font-size: 13px; padding: 9px 16px; }
+
+.copy-page__list-head { font-size: 10px; padding: 14px 22px; }
+
+.copy-row { padding: 16px 22px; }
+.copy-row__rank-num { font-size: 1.05rem; }
+.copy-row__tier { font-size: 9.5px; padding: 2px 8px; }
+.copy-row__handle { font-size: 14.5px; }
+.copy-row__handle span { font-weight: 500; }
+.copy-row__meta { font-size: 11px; letter-spacing: 0.04em; }
+.copy-row__roi { font-size: 14px; }
+.copy-row__winrate { font-size: 12.5px; }
+.copy-row__pnl { font-size: 13px; }
+.copy-row__copiers { font-size: 12.5px; }
+
+.copy-page__list-body { max-height: clamp(520px, 78vh, 1000px); }
+
+.trader-detail__rank { font-size: 12px; }
+.trader-detail__rank-num { font-size: 14px; }
+.trader-detail__tier { font-size: 10.5px; }
+.trader-detail__country { font-size: 18px; }
+.trader-detail__handle { font-size: 1.85rem; }
+.trader-detail__bio { font-size: 13.5px; line-height: 1.6; }
+.trader-detail__badge { font-size: 10.5px; padding: 4px 10px; }
+
+.trader-detail__headline { padding: 20px 22px; }
+.trader-detail__headline-label { font-size: 9.5px; letter-spacing: 0.28em; }
+.trader-detail__headline-value { font-size: 1.35rem; }
+.trader-detail__spark-label { font-size: 9.5px; letter-spacing: 0.28em; }
+.trader-detail__spark-svg { height: 64px; }
+
+.trader-detail__stat-label { font-size: 9.5px; letter-spacing: 0.28em; }
+.trader-detail__stat-value { font-size: 1.2rem; }
+
+.trader-detail__positions-head { font-size: 11px; }
+.trader-detail__positions-row { font-size: 13.5px; padding: 14px 0; }
+.trader-detail__positions-row--head { font-size: 10px; letter-spacing: 0.24em; padding: 10px 0; }
+.trader-detail__pos-icon { width: 32px; height: 32px; font-size: 12px; }
+.trader-detail__pos-symbol-name { font-size: 13.5px; letter-spacing: 0.04em; }
+.trader-detail__pos-symbol-time { font-size: 10.5px; }
+.trader-detail__pos-side-tag { font-size: 11px; padding: 4px 10px; letter-spacing: 0.16em; }
+.trader-detail__pos-leverage { font-size: 12px; }
+.trader-detail__pos-size, .trader-detail__pos-margin { font-size: 13px; }
+.trader-detail__pos-entry { font-size: 12.5px; }
+.trader-detail__pos-pnl-usd { font-size: 14px; }
+.trader-detail__pos-pnl-pct { font-size: 11px; }
+
+.trader-detail__copy-info-head { font-size: 11px; }
+.trader-detail__copy-info-label { font-size: 10px; letter-spacing: 0.24em; }
+.trader-detail__copy-info-value { font-size: 1.2rem; }
+
+.trader-detail__cta { font-size: 13px; padding: 13px 20px; letter-spacing: 0.14em; }
+
+.trader-detail__disclaimer { font-size: 12.5px; padding: 14px 16px; }
+
+.copy-page__footer { padding: 18px 22px; font-size: 12px; }
+.copy-page__footer-mark { font-size: 1.15rem; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FULL-WIDTH LAYOUT — leaderboard takes the whole page
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1280px) {
+  .copy-page__body {
+    grid-template-columns: minmax(0, 1fr) 500px;
+    gap: 22px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .copy-page__body {
+    grid-template-columns: minmax(0, 1fr) 560px;
+    gap: 28px;
+  }
+}
+
+/* Make the row use the full width with proper column widths on wide screens */
+@media (min-width: 1400px) {
+  .copy-page__list-head {
+    grid-template-columns: 90px 2fr 0.7fr 1.1fr 0.9fr 0.7fr 36px;
+  }
+  .copy-row {
+    grid-template-columns: 90px 2fr 0.7fr 1.1fr 0.9fr 0.7fr 36px;
+  }
+}
