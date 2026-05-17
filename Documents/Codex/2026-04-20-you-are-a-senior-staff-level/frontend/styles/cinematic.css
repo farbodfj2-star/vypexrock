@@ -1867,3 +1867,86 @@ body:has(.cinematic-film) .vx-app-main--landing {
     transform: translate3d(calc(-100% + var(--lambo-p, 1) * (100vw + 100%)), 0, 0) !important;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   SOUND TOGGLE — floating bottom-right mute button
+   ═══════════════════════════════════════════════════════════════════ */
+.vx-sound-toggle {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.vx-sound-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 8, 13, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: rgba(246, 247, 251, 0.55);
+  cursor: pointer;
+  transition: all 0.3s var(--ease-cine, cubic-bezier(0.22, 0.61, 0.36, 1));
+}
+
+.vx-sound-toggle__btn:hover {
+  border-color: rgba(125, 211, 252, 0.4);
+  color: rgba(186, 230, 253, 1);
+  background: rgba(13, 17, 24, 0.85);
+}
+
+.vx-sound-toggle__btn.is-on {
+  color: rgba(125, 211, 252, 0.85);
+  border-color: rgba(125, 211, 252, 0.25);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.18);
+}
+
+.vx-sound-toggle__btn.is-on::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  animation: vx-sound-pulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes vx-sound-pulse {
+  0%, 100% { transform: scale(1); opacity: 0; }
+  50% { transform: scale(1.18); opacity: 0.6; }
+}
+
+.vx-sound-toggle__replay {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.85);
+  background: rgba(6, 8, 13, 0.85);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-cine, cubic-bezier(0.22, 0.61, 0.36, 1));
+  white-space: nowrap;
+}
+
+.vx-sound-toggle__replay:hover {
+  background: rgba(125, 211, 252, 0.12);
+  color: rgba(186, 230, 253, 1);
+}
+
+@media (max-width: 720px) {
+  .vx-sound-toggle { bottom: 96px; right: 12px; }
+  .vx-sound-toggle__replay { display: none; }
+}

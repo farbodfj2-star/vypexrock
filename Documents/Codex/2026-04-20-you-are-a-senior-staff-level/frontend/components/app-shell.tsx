@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
+import { SoundBoot } from "@/components/audio/sound-boot";
 import { useMouseGlow } from "@/hooks/use-mouse-glow";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="min-w-0 flex-1">{children}</div>
       </main>
       <MobileNavigation />
+      <SoundBoot />
     </div>
   );
 }
