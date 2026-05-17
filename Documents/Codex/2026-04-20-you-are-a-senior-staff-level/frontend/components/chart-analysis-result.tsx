@@ -104,8 +104,122 @@ export function ChartAnalysisResult({
 
       <Card title="Explanation" isDark={isDark} compact={compact}>
         <p className={isDark ? "text-sm leading-6 text-slate-300" : "text-sm leading-6 text-slate-600"}>{analysis.explanation}</p>
+        {analysis.keyMessage ? (
+          <p className={isDark ? "mt-3 rounded border border-cyan-400/20 bg-cyan-400/[0.06] px-3 py-2 text-sm leading-6 text-cyan-200" : "mt-3 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm leading-6 text-blue-900"}>
+            <strong>Key message: </strong>{analysis.keyMessage}
+          </p>
+        ) : null}
         <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">{analysis.riskWarning}</p>
       </Card>
+
+      {analysis.scenarios?.length ? (
+        <Card title="Scenarios · what could happen next" isDark={isDark} compact={compact}>
+          <div className="space-y-3">
+            {analysis.scenarios.map((s) => (
+              <div key={s.name} className={isDark ? "rounded-xl border border-white/[0.08] bg-white/[0.02] p-3" : "rounded-xl border border-slate-200 bg-white/70 p-3"}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className={isDark ? "text-sm font-semibold text-slate-100" : "text-sm font-semibold text-slate-900"}>{s.name}</p>
+                  <span className={isDark ? "text-xs font-mono text-cyan-300" : "text-xs font-mono text-blue-700"}>{s.probability}% probability</span>
+                </div>
+                <p className={isDark ? "mt-2 text-xs leading-5 text-slate-400" : "mt-2 text-xs leading-5 text-slate-500"}><strong className={isDark ? "text-slate-200" : "text-slate-700"}>Trigger: </strong>{s.trigger}</p>
+                <p className={isDark ? "mt-1 text-xs leading-5 text-slate-400" : "mt-1 text-xs leading-5 text-slate-500"}><strong className={isDark ? "text-slate-200" : "text-slate-700"}>Outcome: </strong>{s.outcome}</p>
+                <p className={isDark ? "mt-1 text-xs leading-5 text-slate-400" : "mt-1 text-xs leading-5 text-slate-500"}><strong className={isDark ? "text-slate-200" : "text-slate-700"}>Invalidation: </strong>{s.invalidation}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
+      {analysis.confluence?.length ? (
+        <Card title="Confluence checklist" isDark={isDark} compact={compact}>
+          <div className="space-y-2">
+            {analysis.confluence.map((c) => (
+              <div key={c.factor} className={isDark ? "flex items-start gap-3 border-t border-slate-800 pt-2 first:border-t-0 first:pt-0" : "flex items-start gap-3 border-t border-slate-100 pt-2 first:border-t-0 first:pt-0"}>
+                <span
+                  className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                    c.status === "supportive"
+                      ? "bg-emerald-400"
+                      : c.status === "against"
+                      ? "bg-rose-400"
+                      : isDark
+                      ? "bg-slate-500"
+                      : "bg-slate-400"
+                  }`}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <p className={isDark ? "text-sm font-medium text-slate-100" : "text-sm font-medium text-slate-900"}>{c.factor}</p>
+                  <p className={isDark ? "text-xs leading-5 text-slate-400" : "text-xs leading-5 text-slate-500"}>{c.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
+      {analysis.expectedMove ? (
+        <Card title="Expected move · time-window forecast" isDark={isDark} compact={compact}>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className={isDark ? "text-[11px] uppercase tracking-widest text-slate-500" : "text-[11px] uppercase tracking-widest text-slate-400"}>Window</p>
+              <p className={isDark ? "mt-1 text-sm text-slate-100" : "mt-1 text-sm text-slate-900"}>{analysis.expectedMove.window}</p>
+            </div>
+            <div>
+              <p className={isDark ? "text-[11px] uppercase tracking-widest text-slate-500" : "text-[11px] uppercase tracking-widest text-slate-400"}>Range</p>
+              <p className={isDark ? "mt-1 text-sm font-mono text-cyan-200" : "mt-1 text-sm font-mono text-blue-700"}>{analysis.expectedMove.range}</p>
+            </div>
+            <div>
+              <p className={isDark ? "text-[11px] uppercase tracking-widest text-slate-500" : "text-[11px] uppercase tracking-widest text-slate-400"}>Bias</p>
+              <p className={isDark ? "mt-1 text-sm text-slate-100" : "mt-1 text-sm text-slate-900"}>{analysis.expectedMove.bias}</p>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
+      {analysis.liquidityZones?.length ? (
+        <Card title="Liquidity map" isDark={isDark} compact={compact}>
+          <div className="space-y-2">
+            {analysis.liquidityZones.map((z, i) => (
+              <div key={i} className={isDark ? "flex items-center justify-between gap-3 border-t border-slate-800 pt-2 first:border-t-0 first:pt-0" : "flex items-center justify-between gap-3 border-t border-slate-100 pt-2 first:border-t-0 first:pt-0"}>
+                <div className="flex items-center gap-3">
+                  <span className={`text-[10px] font-mono uppercase tracking-widest ${z.type === "above" ? "text-emerald-400" : "text-rose-400"}`}>
+                    {z.type === "above" ? "ABOVE" : "BELOW"}
+                  </span>
+                  <span className={isDark ? "text-sm text-slate-300" : "text-sm text-slate-600"}>{z.description}</span>
+                </div>
+                <span className={isDark ? "font-mono text-sm text-slate-100" : "font-mono text-sm text-slate-900"}>{formatNumDisplay(z.price)}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
+      {analysis.positionSize ? (
+        <Card title="Position sizing · 1% risk on $10k example" isDark={isDark} compact={compact}>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className={isDark ? "text-[11px] uppercase tracking-widest text-slate-500" : "text-[11px] uppercase tracking-widest text-slate-400"}>Risk</p>
+              <p className={isDark ? "mt-1 text-sm font-mono text-slate-100" : "mt-1 text-sm font-mono text-slate-900"}>{analysis.positionSize.riskPercent}%</p>
+            </div>
+            <div>
+              <p className={isDark ? "text-[11px] uppercase tracking-widest text-slate-500" : "text-[11px] uppercase tracking-widest text-slate-400"}>Position size</p>
+              <p className={isDark ? "mt-1 text-sm font-mono text-slate-100" : "mt-1 text-sm font-mono text-slate-900"}>${analysis.positionSize.sizeUsd.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className={isDark ? "text-[11px] uppercase tracking-widest text-slate-500" : "text-[11px] uppercase tracking-widest text-slate-400"}>Leverage</p>
+              <p className={isDark ? "mt-1 text-sm font-mono text-slate-100" : "mt-1 text-sm font-mono text-slate-900"}>{analysis.positionSize.estLeverage}</p>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
+      {analysis.followUp?.length ? (
+        <Card title="Follow-up actions" isDark={isDark} compact={compact}>
+          <ul className={isDark ? "list-disc space-y-2 pl-5 text-sm leading-6 text-slate-300" : "list-disc space-y-2 pl-5 text-sm leading-6 text-slate-600"}>
+            {analysis.followUp.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </Card>
+      ) : null}
 
       <Card title="Indicators" isDark={isDark} compact={compact}>
         <div className={isDark ? "space-y-3 text-sm text-slate-300" : "space-y-3 text-sm text-slate-600"}>
@@ -252,4 +366,11 @@ function titleClass(isDark: boolean) {
 
 function mutedClass(isDark: boolean) {
   return isDark ? "mt-2 text-sm leading-6 text-slate-300" : "mt-2 text-sm leading-6 text-slate-500";
+}
+
+function formatNumDisplay(v: number) {
+  if (v >= 1000) return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  if (v >= 100) return v.toFixed(2);
+  if (v >= 1) return v.toFixed(3);
+  return v.toFixed(5);
 }

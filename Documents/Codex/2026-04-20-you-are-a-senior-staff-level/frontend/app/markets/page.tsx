@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownRight, ArrowUpRight, ChevronRight, Search } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronRight, Search, TrendingUp } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
 import {
@@ -71,7 +71,9 @@ export default function MarketsPage() {
   const totals = useMemo(() => {
     const total24h = visible.reduce((s, a) => s + (a.volume || 0), 0);
     const advancing = visible.filter((a) => a.change > 0).length;
-    return { total24h, advancing, total: visible.length };
+    const topGainer = [...visible].sort((a, b) => b.change - a.change)[0];
+    const topLoser = [...visible].sort((a, b) => a.change - b.change)[0];
+    return { total24h, advancing, total: visible.length, topGainer, topLoser };
   }, [visible]);
 
   const selectedAsset = selected
@@ -83,10 +85,10 @@ export default function MarketsPage() {
       {/* ── Header ── */}
       <div className="markets-page__head">
         <div>
-          <p className="markets-page__eyebrow">FX 2000 · LIVE MARKET BOARD</p>
+          <p className="markets-page__eyebrow">VYPEXROCK · LIVE MARKET BOARD</p>
           <h1 className="markets-page__title">Markets</h1>
           <p className="markets-page__sub">
-            Every tracked instrument, live · {totals.total} symbols · {totals.advancing} advancing
+            Live prices for {totals.total} instruments · {totals.advancing} advancing · streaming from Binance and major venues.
           </p>
         </div>
 
@@ -105,6 +107,47 @@ export default function MarketsPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Mood / leaders ── */}
+      {totals.topGainer && totals.topLoser ? (
+        <div className="markets-page__mood">
+          <div className="markets-page__mood-card markets-page__mood-card--up">
+            <div>
+              <p className="markets-page__mood-label">TOP GAINER · 24H</p>
+              <p className="markets-page__mood-name">{totals.topGainer.name}</p>
+              <p className="markets-page__mood-symbol">{totals.topGainer.label}</p>
+            </div>
+            <div className="markets-page__mood-figure">
+              <span className="is-up">+{totals.topGainer.change.toFixed(2)}%</span>
+              <span>${formatPrice(totals.topGainer.price)}</span>
+            </div>
+          </div>
+          <div className="markets-page__mood-card markets-page__mood-card--dn">
+            <div>
+              <p className="markets-page__mood-label">TOP LOSER · 24H</p>
+              <p className="markets-page__mood-name">{totals.topLoser.name}</p>
+              <p className="markets-page__mood-symbol">{totals.topLoser.label}</p>
+            </div>
+            <div className="markets-page__mood-figure">
+              <span className="is-dn">{totals.topLoser.change.toFixed(2)}%</span>
+              <span>${formatPrice(totals.topLoser.price)}</span>
+            </div>
+          </div>
+          <div className="markets-page__mood-card markets-page__mood-card--mid">
+            <div>
+              <p className="markets-page__mood-label">SENTIMENT</p>
+              <p className="markets-page__mood-name">{moodLabel(totals.advancing, totals.total)}</p>
+              <p className="markets-page__mood-symbol">{totals.advancing} of {totals.total} advancing</p>
+            </div>
+            <div className="markets-page__mood-figure">
+              <span className={cn(totals.advancing / totals.total > 0.5 ? "is-up" : "is-dn")}>
+                {Math.round((totals.advancing / Math.max(1, totals.total)) * 100)}%
+              </span>
+              <span>breadth</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* ── Filters / search ── */}
       <div className="markets-page__toolbar">
@@ -206,8 +249,8 @@ export default function MarketsPage() {
               <p className="markets-page__placeholder-eyebrow">SELECT AN INSTRUMENT</p>
               <h2 className="markets-page__placeholder-title">Tap any symbol to open the analysis panel.</h2>
               <p className="markets-page__placeholder-body">
-                Live price, 24h change, candlestick chart, and a custom intelligence card —
-                in the spirit of the FX 2000 trading terminal.
+                Get a live candlestick chart, 24h stats, key indicators, and a real
+                description of what the asset is and how it trades.
               </p>
               <div className="markets-page__placeholder-grid">
                 {visible.slice(0, 4).map((a) => (
@@ -228,16 +271,28 @@ export default function MarketsPage() {
         </aside>
       </div>
 
-      {/* ── FX 2000 footer ── */}
+      {/* ── footer ── */}
       <div className="markets-page__footer">
-        <span className="markets-page__footer-mark">FX 2000</span>
+        <span className="markets-page__footer-mark">VYPEXROCK</span>
         <span className="markets-page__footer-sep" />
-        <span>made by Vypexrock · institutional intelligence terminal</span>
+        <span>institutional crypto intelligence · live data streaming</span>
         <span className="markets-page__footer-sep" />
-        <Link href="/terminal" className="markets-page__footer-link">Open full terminal →</Link>
+        <Link href="/terminal" className="markets-page__footer-link">
+          <TrendingUp className="inline h-3 w-3" /> Open full terminal →
+        </Link>
       </div>
     </div>
   );
+}
+
+function moodLabel(advancing: number, total: number) {
+  if (total === 0) return "—";
+  const ratio = advancing / total;
+  if (ratio >= 0.7) return "Risk-on";
+  if (ratio >= 0.55) return "Bullish lean";
+  if (ratio >= 0.45) return "Mixed";
+  if (ratio >= 0.3) return "Bearish lean";
+  return "Risk-off";
 }
 
 function formatPrice(p: number) {

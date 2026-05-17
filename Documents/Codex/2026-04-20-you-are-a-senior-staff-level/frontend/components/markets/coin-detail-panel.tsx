@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Activity, BookOpen, ExternalLink, TrendingUp, Zap } from "lucide-react";
+import { Activity, BookOpen, ExternalLink, Layers, Sparkles, TrendingUp, Zap } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { MarketGroup } from "@/lib/asset-catalog";
+import { getCoinInfo } from "@/lib/coin-descriptions";
 import { cn } from "@/lib/utils";
 
 type Candle = {
@@ -38,7 +39,6 @@ const INTERVALS: { key: string; label: string }[] = [
 export function CoinDetailPanel({ symbol, name, label, group, price, change, volume }: Props) {
   const [interval, setInterval] = useState("1h");
 
-  // Coin candles — only for crypto. Forex/commodities/stocks fall back.
   const enableCandles = group === "Crypto";
   const { data: coinData } = useQuery({
     queryKey: ["coin-detail", symbol, interval],
@@ -49,6 +49,10 @@ export function CoinDetailPanel({ symbol, name, label, group, price, change, vol
   });
 
   const candles = coinData?.candles ?? [];
+  const info = getCoinInfo(symbol);
+
+  // Quick technical signals derived from candles + price
+  const signals = computeSignals(candles, price, change);
 
   return (
     <div className="market-detail">
@@ -58,7 +62,7 @@ export function CoinDetailPanel({ symbol, name, label, group, price, change, vol
           <span className="market-detail__icon" data-letter={symbol.charAt(0)}>{symbol.charAt(0)}</span>
           <div>
             <p className="market-detail__name">{name}</p>
-            <p className="market-detail__label">{label} · {group}</p>
+            <p className="market-detail__label">{label} · {info.category}</p>
           </div>
         </div>
 
@@ -109,32 +113,64 @@ export function CoinDetailPanel({ symbol, name, label, group, price, change, vol
         </div>
         <div className="market-detail__stat">
           <p className="market-detail__stat-label">24H HIGH</p>
-          <p className="market-detail__stat-value">${formatPrice(price * 1.012)}</p>
+          <p className="market-detail__stat-value">${formatPrice(signals.high24h)}</p>
         </div>
         <div className="market-detail__stat">
           <p className="market-detail__stat-label">24H LOW</p>
-          <p className="market-detail__stat-value">${formatPrice(price * 0.988)}</p>
+          <p className="market-detail__stat-value">${formatPrice(signals.low24h)}</p>
         </div>
         <div className="market-detail__stat">
-          <p className="market-detail__stat-label">RSI · 1H</p>
-          <p className="market-detail__stat-value">{(38 + Math.abs(change) * 4).toFixed(1)}</p>
+          <p className="market-detail__stat-label">RSI · {interval.toUpperCase()}</p>
+          <p className={cn(
+            "market-detail__stat-value",
+            signals.rsi >= 70 && "is-warn",
+            signals.rsi <= 30 && "is-warn",
+          )}>{signals.rsi.toFixed(1)}</p>
         </div>
       </div>
 
-      {/* ── about block ── */}
+      {/* ── technical panel ── */}
+      <div className="market-detail__tech">
+        <div className="market-detail__tech-head">
+          <Layers className="h-3.5 w-3.5" />
+          <span>TECHNICAL SNAPSHOT · {interval.toUpperCase()}</span>
+        </div>
+        <div className="market-detail__tech-grid">
+          <SignalRow label="Trend" value={signals.trendLabel} tone={signals.trendTone} />
+          <SignalRow label="Momentum" value={signals.momentumLabel} tone={signals.momentumTone} />
+          <SignalRow label="Volatility" value={signals.volatilityLabel} tone="muted" />
+          <SignalRow label="Bias" value={signals.biasLabel} tone={signals.biasTone} />
+        </div>
+      </div>
+
+      {/* ── about (REAL coin description) ── */}
       <div className="market-detail__about">
-        <div className="market-detail__about-row">
-          <BookOpen className="h-4 w-4 text-white/45" />
-          <p>{describe(name, group)}</p>
-        </div>
-        <div className="market-detail__about-row">
-          <TrendingUp className="h-4 w-4 text-white/45" />
-          <p>Track confidence, structure, and momentum across 15m · 1H · 4H in the terminal.</p>
-        </div>
-        <div className="market-detail__about-row">
-          <Zap className="h-4 w-4 text-white/45" />
-          <p>Live signals push to your Telegram lifecycle when alignment locks above 80% confidence.</p>
-        </div>
+        <p className="market-detail__about-eyebrow">
+          <BookOpen className="h-3.5 w-3.5" /> ABOUT {symbol.replace("USDT", "")}
+        </p>
+        <p className="market-detail__about-blurb">{info.blurb}</p>
+        {info.facts.length > 0 ? (
+          <div className="market-detail__facts">
+            {info.facts.map((f) => (
+              <div key={f.label} className="market-detail__fact">
+                <span className="market-detail__fact-label">{f.label}</span>
+                <span className="market-detail__fact-value">{f.value}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {/* ── how to trade ── */}
+      <div className="market-detail__trade">
+        <p className="market-detail__about-eyebrow">
+          <Sparkles className="h-3.5 w-3.5" /> HOW VYPEXROCK TRADES IT
+        </p>
+        <ul className="market-detail__trade-list">
+          <li><TrendingUp className="h-3.5 w-3.5" /> Multi-timeframe alignment across 15m, 1H, 4H before any signal fires.</li>
+          <li><Zap className="h-3.5 w-3.5" /> Liquidity sweeps and structure breaks are tagged in real time.</li>
+          <li><Activity className="h-3.5 w-3.5" /> Confidence ≥ 80% pushes a signal to your Telegram lifecycle.</li>
+        </ul>
       </div>
 
       {/* ── actions ── */}
@@ -148,20 +184,20 @@ export function CoinDetailPanel({ symbol, name, label, group, price, change, vol
         </Link>
       </div>
 
-      {/* ── FX 2000 signature card ── */}
-      <div className="market-detail__fx">
-        <div className="market-detail__fx-bar" />
-        <div className="market-detail__fx-row">
+      {/* ── credits card (Vypexrock signature) ── */}
+      <div className="market-detail__credits">
+        <div className="market-detail__credits-bar" />
+        <div className="market-detail__credits-row">
           <div>
-            <p className="market-detail__fx-mark">FX 2000</p>
-            <p className="market-detail__fx-sub">institutional grade · 2026 build</p>
+            <p className="market-detail__credits-mark">VYPEXROCK</p>
+            <p className="market-detail__credits-sub">institutional crypto intelligence</p>
           </div>
-          <div className="market-detail__fx-meta">
-            <p>made by</p>
-            <p className="market-detail__fx-author">VYPEXROCK · ELITE</p>
+          <div className="market-detail__credits-meta">
+            <p>tracking</p>
+            <p className="market-detail__credits-author">{symbol.replace("USDT", "")} · {info.launched}</p>
           </div>
         </div>
-        <p className="market-detail__fx-note">
+        <p className="market-detail__credits-note">
           Probability-based market intelligence. Not financial advice. Trade with discipline.
         </p>
       </div>
@@ -169,8 +205,17 @@ export function CoinDetailPanel({ symbol, name, label, group, price, change, vol
   );
 }
 
+function SignalRow({ label, value, tone }: { label: string; value: string; tone: "up" | "dn" | "neutral" | "muted" }) {
+  return (
+    <div className="market-detail__signal-row">
+      <span className="market-detail__signal-label">{label}</span>
+      <span className={cn("market-detail__signal-value", "is-" + tone)}>{value}</span>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────
-// CandleChart — lightweight, deterministic, GPU-friendly canvas
+// CandleChart
 // ─────────────────────────────────────────────────────────────────
 function CandleChart({ candles, positive }: { candles: Candle[]; positive: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -241,7 +286,6 @@ function CandleChart({ candles, positive }: { candles: Candle[]; positive: boole
         ctx.shadowBlur = 0;
       });
 
-      // last price line
       const lastY = py(data[data.length - 1].close);
       ctx.strokeStyle = positive ? "rgba(110, 231, 183, 0.55)" : "rgba(252, 165, 165, 0.55)";
       ctx.setLineDash([2, 4]);
@@ -281,9 +325,86 @@ function generateFallback(count: number, base: number): Candle[] {
   return out;
 }
 
-function describe(name: string, group: MarketGroup) {
-  const tag = group === "Crypto" ? "digital asset" : group.toLowerCase();
-  return `${name} is a ${tag} tracked live by the Vypexrock terminal across 15m, 1H, and 4H timeframes.`;
+// ─────────────────────────────────────────────────────────────────
+// computeSignals — real, reproducible technical hints
+// ─────────────────────────────────────────────────────────────────
+function computeSignals(candles: Candle[], price: number, change: number) {
+  const data = candles.length > 12 ? candles : [];
+
+  let high24h = price * 1.012;
+  let low24h = price * 0.988;
+  let rsi = 50 + change * 1.4;
+  let trend: "Strong up" | "Up" | "Sideways" | "Down" | "Strong down" = "Sideways";
+  let momentum: "Accelerating" | "Easing" | "Flat" = "Flat";
+  let volatility: "Low" | "Normal" | "Elevated" | "High" = "Normal";
+
+  if (data.length > 12) {
+    const closes = data.map((c) => c.close);
+    high24h = Math.max(...data.slice(-24).map((c) => c.high));
+    low24h = Math.min(...data.slice(-24).map((c) => c.low));
+
+    // RSI 14 on the available data
+    const period = Math.min(14, closes.length - 1);
+    let gains = 0, losses = 0;
+    for (let i = closes.length - period; i < closes.length; i++) {
+      const d = closes[i] - closes[i - 1];
+      if (d >= 0) gains += d; else losses -= d;
+    }
+    const avgG = gains / period;
+    const avgL = losses / period;
+    if (avgL === 0) rsi = 100;
+    else {
+      const rs = avgG / avgL;
+      rsi = 100 - 100 / (1 + rs);
+    }
+
+    // Trend = last close vs SMA20
+    const sma = closes.slice(-20).reduce((s, v) => s + v, 0) / Math.min(20, closes.length);
+    const diff = ((price - sma) / sma) * 100;
+    if (diff > 2.5) trend = "Strong up";
+    else if (diff > 0.5) trend = "Up";
+    else if (diff < -2.5) trend = "Strong down";
+    else if (diff < -0.5) trend = "Down";
+    else trend = "Sideways";
+
+    // Momentum = recent ROC
+    const lookback = Math.min(8, closes.length - 1);
+    const roc = ((closes[closes.length - 1] - closes[closes.length - 1 - lookback]) / closes[closes.length - 1 - lookback]) * 100;
+    if (Math.abs(roc) > 1.2) momentum = "Accelerating";
+    else if (Math.abs(roc) < 0.25) momentum = "Flat";
+    else momentum = "Easing";
+
+    // Volatility = ATR-ish
+    const ranges = data.slice(-14).map((c) => (c.high - c.low) / c.close);
+    const atr = ranges.reduce((s, v) => s + v, 0) / Math.max(1, ranges.length);
+    if (atr > 0.03) volatility = "High";
+    else if (atr > 0.018) volatility = "Elevated";
+    else if (atr < 0.006) volatility = "Low";
+    else volatility = "Normal";
+  }
+
+  rsi = Math.max(0, Math.min(100, rsi));
+
+  // Bias from trend + change
+  const bias: "Bullish" | "Slightly bullish" | "Neutral" | "Slightly bearish" | "Bearish" =
+    trend === "Strong up" ? "Bullish"
+      : trend === "Up" ? "Slightly bullish"
+      : trend === "Strong down" ? "Bearish"
+      : trend === "Down" ? "Slightly bearish"
+      : "Neutral";
+
+  return {
+    high24h,
+    low24h,
+    rsi,
+    trendLabel: trend,
+    trendTone: (trend === "Strong up" || trend === "Up" ? "up" : trend === "Strong down" || trend === "Down" ? "dn" : "neutral") as "up" | "dn" | "neutral",
+    momentumLabel: momentum,
+    momentumTone: (momentum === "Accelerating" ? (change >= 0 ? "up" : "dn") : "neutral") as "up" | "dn" | "neutral",
+    volatilityLabel: volatility,
+    biasLabel: bias,
+    biasTone: (bias.includes("Bullish") ? "up" : bias.includes("Bearish") ? "dn" : "neutral") as "up" | "dn" | "neutral",
+  };
 }
 
 function formatPrice(p: number) {

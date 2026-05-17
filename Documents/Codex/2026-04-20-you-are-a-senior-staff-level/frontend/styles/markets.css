@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────
-   MARKETS PAGE — institutional dark terminal · FX 2000 by VYPEXROCK
+   MARKETS PAGE — institutional dark crypto terminal · Vypexrock
    ───────────────────────────────────────────────────────────────── */
 
 .markets-page {
@@ -730,8 +730,8 @@
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* ── FX 2000 signature ─── */
-.market-detail__fx {
+/* ── Credits signature ─── */
+.market-detail__credits {
   position: relative;
   padding: 18px 20px;
   border: 1px solid rgba(125, 211, 252, 0.18);
@@ -742,7 +742,7 @@
   overflow: hidden;
 }
 
-.market-detail__fx-bar {
+.market-detail__credits-bar {
   position: absolute;
   top: 0;
   left: 0;
@@ -751,7 +751,7 @@
   background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.6), transparent);
 }
 
-.market-detail__fx-row {
+.market-detail__credits-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -759,12 +759,11 @@
   margin-bottom: 12px;
 }
 
-.market-detail__fx-mark {
+.market-detail__credits-mark {
   font-family: var(--font-display);
   font-weight: 200;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   letter-spacing: 0.18em;
-  color: rgba(246, 247, 251, 1);
   background: linear-gradient(120deg, #ffffff 0%, #7dd3fc 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -772,7 +771,7 @@
   margin: 0;
 }
 
-.market-detail__fx-sub {
+.market-detail__credits-sub {
   font-family: ui-monospace, monospace;
   font-size: 9px;
   letter-spacing: 0.32em;
@@ -781,11 +780,11 @@
   margin: 4px 0 0;
 }
 
-.market-detail__fx-meta {
+.market-detail__credits-meta {
   text-align: right;
 }
 
-.market-detail__fx-meta p:first-child {
+.market-detail__credits-meta p:first-child {
   font-family: ui-monospace, monospace;
   font-size: 9px;
   letter-spacing: 0.42em;
@@ -794,16 +793,16 @@
   margin: 0;
 }
 
-.market-detail__fx-author {
+.market-detail__credits-author {
   font-family: var(--font-display);
   font-weight: 200;
   font-size: 0.95rem;
-  letter-spacing: 0.36em;
+  letter-spacing: 0.18em;
   color: rgba(246, 247, 251, 0.92);
   margin: 4px 0 0;
 }
 
-.market-detail__fx-note {
+.market-detail__credits-note {
   font-size: 11px;
   color: rgba(246, 247, 251, 0.4);
   line-height: 1.55;
@@ -857,4 +856,269 @@
 
 .markets-page__footer-link:hover {
   color: rgba(125, 211, 252, 1);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOOD CARDS — top gainer / loser / sentiment
+   ═══════════════════════════════════════════════════════════════════ */
+.markets-page__mood {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+@media (min-width: 768px) {
+  .markets-page__mood {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.markets-page__mood-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--c-edge);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(13, 17, 24, 0.6), rgba(6, 8, 13, 0.45));
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.markets-page__mood-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.markets-page__mood-card--up::before {
+  background: linear-gradient(90deg, transparent, rgba(110, 231, 183, 0.55), transparent);
+}
+
+.markets-page__mood-card--dn::before {
+  background: linear-gradient(90deg, transparent, rgba(252, 165, 165, 0.55), transparent);
+}
+
+.markets-page__mood-card--mid::before {
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.55), transparent);
+}
+
+.markets-page__mood-label {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.42);
+  margin: 0 0 8px;
+}
+
+.markets-page__mood-name {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 1.05rem;
+  color: rgba(246, 247, 251, 0.95);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.markets-page__mood-symbol {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.42);
+  margin: 4px 0 0;
+}
+
+.markets-page__mood-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-family: ui-monospace, monospace;
+}
+
+.markets-page__mood-figure span:first-child {
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: 1.35rem;
+  font-feature-settings: "tnum";
+}
+
+.markets-page__mood-figure span:last-child {
+  font-size: 11px;
+  color: rgba(246, 247, 251, 0.5);
+  letter-spacing: 0.05em;
+}
+
+.markets-page__mood-figure .is-up { color: var(--c-up); }
+.markets-page__mood-figure .is-dn { color: var(--c-dn); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TECHNICAL SNAPSHOT INSIDE DETAIL PANEL
+   ═══════════════════════════════════════════════════════════════════ */
+.market-detail__tech {
+  border: 1px solid var(--c-edge);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.012);
+  padding: 14px 16px;
+}
+
+.market-detail__tech-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.7);
+  margin-bottom: 12px;
+}
+
+.market-detail__tech-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 18px;
+}
+
+.market-detail__signal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+}
+
+.market-detail__signal-row:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.market-detail__signal-label {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.42);
+}
+
+.market-detail__signal-value {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(246, 247, 251, 0.95);
+}
+
+.market-detail__signal-value.is-up { color: var(--c-up); }
+.market-detail__signal-value.is-dn { color: var(--c-dn); }
+.market-detail__signal-value.is-neutral { color: rgba(186, 230, 253, 0.85); }
+.market-detail__signal-value.is-muted { color: rgba(246, 247, 251, 0.55); }
+
+.market-detail__stat-value.is-warn {
+  color: rgba(252, 211, 77, 0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ABOUT BLOCK + FACTS GRID
+   ═══════════════════════════════════════════════════════════════════ */
+.market-detail__about {
+  border-top: 1px solid var(--c-edge);
+  padding: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.market-detail__about-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.7);
+  margin: 0;
+}
+
+.market-detail__about-blurb {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: rgba(246, 247, 251, 0.7);
+  margin: 0;
+}
+
+.market-detail__facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.market-detail__fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--c-edge);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.market-detail__fact-label {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(246, 247, 251, 0.42);
+}
+
+.market-detail__fact-value {
+  font-size: 11.5px;
+  color: rgba(246, 247, 251, 0.92);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HOW VYPEXROCK TRADES IT
+   ═══════════════════════════════════════════════════════════════════ */
+.market-detail__trade {
+  border-top: 1px solid var(--c-edge);
+  padding: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.market-detail__trade-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.market-detail__trade-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(246, 247, 251, 0.6);
+}
+
+.market-detail__trade-list li svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+  color: rgba(125, 211, 252, 0.7);
 }
