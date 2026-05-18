@@ -25,11 +25,18 @@ export async function uploadUserAvatar(file: File, token?: string | null): Promi
   const form = new FormData();
   form.append("file", file);
 
-  const response = await fetch(`${appConfig.apiUrl}/auth/me/avatar`, {
-    method: "POST",
-    headers,
-    body: form
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${appConfig.apiUrl}/auth/me/avatar`, {
+      method: "POST",
+      headers,
+      body: form
+    });
+  } catch (err) {
+    throw new Error(
+      "Vypexrock service is currently unreachable. The backend may be restarting — please retry in a moment.",
+    );
+  }
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ detail: "Avatar upload failed" }));
@@ -51,11 +58,24 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${appConfig.apiUrl}${path}`, {
-    ...options,
-    headers,
-    cache: "no-store"
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${appConfig.apiUrl}${path}`, {
+      ...options,
+      headers,
+      cache: "no-store"
+    });
+  } catch (err) {
+    // Network-level failure: backend unreachable, CORS preflight failed, etc.
+    // Browser shows "Failed to fetch" by default — replace with something useful.
+    const isOnline = typeof navigator === "undefined" || navigator.onLine;
+    if (!isOnline) {
+      throw new Error("You appear to be offline. Check your connection and try again.");
+    }
+    throw new Error(
+      "Vypexrock service is currently unreachable. The backend may be restarting — please retry in a moment.",
+    );
+  }
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ detail: "Request failed" }));
